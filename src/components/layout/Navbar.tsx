@@ -86,6 +86,12 @@ export const Navbar: React.FC = () => {
               <option value="linreg-v1" className="bg-slate-900 text-slate-100">Linear Regression</option>
             </select>
           </div>
+
+          {/* Live Server Indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 px-2.5 py-1 text-[11px] font-mono text-emerald-400">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>FastAPI ML: Online</span>
+          </div>
         </div>
       </div>
     </header>

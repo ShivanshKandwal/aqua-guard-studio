@@ -3,7 +3,17 @@ import { useStudioStore } from "../../lib/store/studio-store";
 import { Sliders, RefreshCw, CloudRain, Droplet, Building2, Factory, Sprout, Calendar, Sparkles } from "lucide-react";
 
 export const MetricsControlDeck: React.FC = () => {
-  const { params, setParam, resetParams, applyPreset, activeModelId, setActiveModelId } = useStudioStore();
+  const {
+    params,
+    setParam,
+    resetParams,
+    applyPreset,
+    activeModelId,
+    setActiveModelId,
+    isServerSynced,
+    isEvaluating,
+    syncWithBackend,
+  } = useStudioStore();
 
   // Model recommendation advice based on forecast horizon
   const getHorizonRecommendation = (years: number) => {
@@ -232,6 +242,44 @@ export const MetricsControlDeck: React.FC = () => {
               onChange={(e) => setParam("dripIrrigationShiftPct", Number(e.target.value))}
               className="w-full accent-emerald-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
+          </div>
+        </div>
+
+        {/* EXPLICIT RUN PREDICTION BUTTON & TELEMETRY INDICATOR */}
+        <div className="mt-7 pt-4 border-t border-slate-800/80 space-y-3">
+          <button
+            onClick={() => syncWithBackend()}
+            disabled={isEvaluating}
+            className="w-full relative group overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 p-[1px] font-bold text-white shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/35 transition-all duration-300 disabled:opacity-60"
+          >
+            <div className="flex items-center justify-center gap-2.5 rounded-2xl bg-slate-950/90 px-4 py-3.5 backdrop-blur-xl group-hover:bg-transparent transition-colors">
+              {isEvaluating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 text-cyan-400 animate-spin" />
+                  <span className="text-sm font-bold tracking-wide text-cyan-200">
+                    Executing Python ML Pipeline...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
+                  <span className="text-sm font-bold tracking-wide text-white">
+                    Send & Execute Model Prediction
+                  </span>
+                </>
+              )}
+            </div>
+          </button>
+
+          {/* Last Execution Telemetry Pill */}
+          <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 font-mono">
+            <span className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${isServerSynced ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+              {isServerSynced ? "Connected to FastAPI: 127.0.0.1:8000" : "Running in local browser fallback"}
+            </span>
+            <span className="text-cyan-400 font-semibold">
+              {activeModelId.toUpperCase()}
+            </span>
           </div>
         </div>
       </div>

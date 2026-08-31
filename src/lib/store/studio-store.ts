@@ -1,8 +1,9 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { CGWB_DISTRICTS, type CGWBDistrict } from "../data/cgwb-districts";
 import type { SimulationParameters, ModelPredictionOutput } from "../ml/types";
 import { getModelById } from "../ml/model-registry";
 import { evaluateDynamicPolicies, type DistrictPolicyEvaluation } from "../policy/policy-engine";
+import { cgwbApiAdapter } from "../data/cgwb-api-adapter";
 
 interface StudioStore {
   // District Selection
@@ -20,7 +21,12 @@ interface StudioStore {
   resetParams: () => void;
   applyPreset: (preset: "drought" | "conservation" | "business-as-usual" | "monsoon-surplus") => void;
 
-  // Computed Reactive Properties
+  // Server Sync Status
+  isServerSynced: boolean;
+  isEvaluating: boolean;
+  serverPrediction: ModelPredictionOutput | null;
+  syncWithBackend: () => Promise<void>;
+
   getCurrentDistrict: () => CGWBDistrict;
   getPrediction: () => ModelPredictionOutput;
   getDistrictPrediction: (districtId: string) => ModelPredictionOutput;
@@ -39,17 +45,29 @@ const DEFAULT_PARAMS: SimulationParameters = {
 export const useStudioStore = create<StudioStore>((set, get) => ({
   districts: CGWB_DISTRICTS,
   selectedDistrictId: "south-west-delhi",
-  setSelectedDistrictId: (id) => set({ selectedDistrictId: id }),
+  setSelectedDistrictId: (id) => {
+    set({ selectedDistrictId: id, serverPrediction: null });
+  },
 
   activeModelId: "xgboost-v1",
-  setActiveModelId: (id) => set({ activeModelId: id }),
+  setActiveModelId: (id) => {
+    set({ activeModelId: id, serverPrediction: null });
+  },
+
+  isServerSynced: false,
+  isEvaluating: false,
+  serverPrediction: null,
 
   params: { ...DEFAULT_PARAMS },
-  setParam: (key, value) =>
+  setParam: (key, value) => {
     set((state) => ({
       params: { ...state.params, [key]: value },
-    })),
-  resetParams: () => set({ params: { ...DEFAULT_PARAMS } }),
+      serverPrediction: null, // Invalidate server prediction when parameters change until button is pressed
+    }));
+  },
+  resetParams: () => {
+    set({ params: { ...DEFAULT_PARAMS }, serverPrediction: null });
+  },
 
   applyPreset: (preset) => {
     switch (preset) {
@@ -63,6 +81,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
             dripIrrigationShiftPct: 10,
             targetYearHorizon: 10,
           },
+          serverPrediction: null,
         });
         break;
       case "conservation":
@@ -75,6 +94,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
             dripIrrigationShiftPct: 75,
             targetYearHorizon: 10,
           },
+          serverPrediction: null,
         });
         break;
       case "monsoon-surplus":
@@ -87,12 +107,26 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
             dripIrrigationShiftPct: 40,
             targetYearHorizon: 10,
           },
+          serverPrediction: null,
         });
         break;
       case "business-as-usual":
       default:
-        set({ params: { ...DEFAULT_PARAMS } });
+        set({ params: { ...DEFAULT_PARAMS }, serverPrediction: null });
         break;
+    }
+  },
+
+  syncWithBackend: async () => {
+    set({ isEvaluating: true });
+    const { getCurrentDistrict, activeModelId, params } = get();
+    const district = getCurrentDistrict();
+
+    const remotePred = await cgwbApiAdapter.fetchRemotePrediction(district, params, activeModelId);
+    if (remotePred) {
+      set({ serverPrediction: remotePred, isServerSynced: true, isEvaluating: false });
+    } else {
+      set({ isServerSynced: false, isEvaluating: false });
     }
   },
 
@@ -102,14 +136,20 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   getPrediction: () => {
-    const { getCurrentDistrict, activeModelId, params } = get();
+    const { serverPrediction, getCurrentDistrict, activeModelId, params } = get();
+    if (serverPrediction) {
+      return serverPrediction;
+    }
     const district = getCurrentDistrict();
     const model = getModelById(activeModelId);
     return model.predict(district, params);
   },
 
   getDistrictPrediction: (districtId: string) => {
-    const { districts, activeModelId, params } = get();
+    const { districts, activeModelId, params, selectedDistrictId, serverPrediction } = get();
+    if (districtId === selectedDistrictId && serverPrediction) {
+      return serverPrediction;
+    }
     const district = districts.find((d) => d.id === districtId) || districts[0];
     const model = getModelById(activeModelId);
     return model.predict(district, params);

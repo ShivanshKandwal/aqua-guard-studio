@@ -74,19 +74,18 @@ export const InteractiveNcrMap: React.FC = () => {
 
       mapInstanceRef.current = map;
 
-      // Clean CartoDB Dark Matter / Positron tile (No API key watermarks)
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png", {
+      // 100% Free OpenStreetMap Clean Base Layer (Zero Watermarks)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
-        subdomains: "abcd",
-        opacity: 0.85,
+        subdomains: ["a", "b", "c"],
       }).addTo(map);
 
-      // Add district centroid text labels
+      // Add district centroid text labels with high-contrast badge pills
       districts.forEach((d) => {
         L.marker(d.center, {
           icon: L.divIcon({
             className: "custom-district-label",
-            html: `<div style="font-size:10px;font-weight:700;color:#f8fafc;text-shadow:0 0 4px #020617,0 0 4px #020617,0 0 6px #020617;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%);">${d.name}</div>`,
+            html: `<div style="display:inline-block;padding:2px 7px;background:rgba(2,6,23,0.85);color:#ffffff;font-size:10px;font-weight:700;font-family:system-ui,-apple-system,sans-serif;border:1px solid rgba(56,189,248,0.4);border-radius:9999px;box-shadow:0 2px 6px rgba(0,0,0,0.6);white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%);">${d.name}</div>`,
           }),
           interactive: false,
         }).addTo(map);
@@ -199,40 +198,40 @@ export const InteractiveNcrMap: React.FC = () => {
   return (
     <div className="relative h-full min-h-[440px] w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
       {/* Top Header Badge */}
-      <div className="absolute top-3 left-3 z-[400] flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-950/85 px-3 py-1.5 backdrop-blur-md shadow-lg">
+      <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-950/95 px-3 py-1.5 backdrop-blur-md shadow-lg pointer-events-none">
         <Layers className="h-4 w-4 text-cyan-400" />
         <span className="text-xs font-semibold text-slate-200">Delhi NCR District Boundaries</span>
         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
       </div>
 
-      {/* Legend Badge */}
-      <div className="absolute bottom-4 right-4 z-[400] rounded-xl border border-slate-800 bg-slate-950/90 p-3 backdrop-blur-md text-[11px] shadow-xl">
-        <div className="font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
-          <Activity className="h-3.5 w-3.5 text-cyan-400" /> CGWB Extraction Stage
+      {/* Map Legend Overlay - Highest Z-Index (over Leaflet map tiles and SVG panes) */}
+      <div className="absolute bottom-4 right-4 z-[1000] rounded-2xl border border-slate-700/90 bg-[#060c1d]/95 p-4 text-xs backdrop-blur-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] pointer-events-auto min-w-[200px]">
+        <div className="flex items-center gap-2 font-bold text-white mb-2.5 pb-2 border-b border-slate-800">
+          <Activity className="h-4 w-4 text-cyan-400" /> CGWB Extraction Stage
         </div>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500"></span>
-            <span className="text-slate-400">Safe (&le; 70%)</span>
+        <div className="space-y-2 font-medium">
+          <div className="flex items-center gap-2.5">
+            <span className="h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-emerald-950 shadow-sm"></span>
+            <span className="text-slate-100 text-[11px] font-semibold">Safe (&le; 70%)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-sm bg-yellow-500"></span>
-            <span className="text-slate-400">Semi-Critical (70-90%)</span>
+          <div className="flex items-center gap-2.5">
+            <span className="h-3 w-3 rounded-full bg-amber-400 ring-2 ring-amber-950 shadow-sm"></span>
+            <span className="text-slate-100 text-[11px] font-semibold">Semi-Critical (70–90%)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-sm bg-orange-500"></span>
-            <span className="text-slate-400">Critical (90-100%)</span>
+          <div className="flex items-center gap-2.5">
+            <span className="h-3 w-3 rounded-full bg-orange-500 ring-2 ring-orange-950 shadow-sm"></span>
+            <span className="text-slate-100 text-[11px] font-semibold">Critical (90–100%)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-sm bg-red-500"></span>
-            <span className="text-slate-400">Over-Exploited (&gt; 100%)</span>
+          <div className="flex items-center gap-2.5">
+            <span className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-950 shadow-sm"></span>
+            <span className="text-slate-100 text-[11px] font-semibold">Over-Exploited (&gt; 100%)</span>
           </div>
         </div>
       </div>
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm text-xs text-slate-400">
+        <div className="absolute inset-0 z-[1001] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm text-xs text-slate-400">
           Loading district boundary polygons...
         </div>
       )}

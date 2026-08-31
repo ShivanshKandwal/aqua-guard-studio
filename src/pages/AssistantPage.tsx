@@ -1,7 +1,10 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useStudioStore } from "../lib/store/studio-store";
 import { generateAssistantResponse, type AssistantMessage } from "../lib/ai/water-assistant-service";
+import { cgwbApiAdapter } from "../lib/data/cgwb-api-adapter";
 import { Bot, Send, User, Sparkles, MapPin, Sliders, ArrowRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export const AssistantPage: React.FC = () => {
   const { getCurrentDistrict, getPrediction, getPolicyEvaluation, params } = useStudioStore();
@@ -28,6 +31,7 @@ How can I assist you with hydrological modeling, drought risk mitigation, or pol
   ]);
 
   const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -36,11 +40,11 @@ How can I assist you with hydrological modeling, drought risk mitigation, or pol
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || input;
-    if (!text.trim()) return;
+    if (!text.trim() || isTyping) return;
 
     const userMsg: AssistantMessage = {
       id: `user-${Date.now()}`,
@@ -51,12 +55,34 @@ How can I assist you with hydrological modeling, drought risk mitigation, or pol
 
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInput("");
+    setIsTyping(true);
 
-    // Simulate AI response calculation
-    setTimeout(() => {
-      const response = generateAssistantResponse(text, district, params, prediction, policies);
-      setMessages((prev) => [...prev, response]);
-    }, 400);
+    try {
+      // Query live Python AI backend
+      const remoteRes = await cgwbApiAdapter.fetchAssistantChat(text, district, params, prediction);
+      
+      if (remoteRes) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            sender: "assistant",
+            text: remoteRes.text,
+            timestamp: remoteRes.timestamp,
+            suggestedActions: remoteRes.suggested_actions,
+          },
+        ]);
+      } else {
+        // Fallback to local response generator
+        const localResponse = generateAssistantResponse(text, district, params, prediction, policies);
+        setMessages((prev) => [...prev, localResponse]);
+      }
+    } catch (e) {
+      const localResponse = generateAssistantResponse(text, district, params, prediction, policies);
+      setMessages((prev) => [...prev, localResponse]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -93,32 +119,50 @@ How can I assist you with hydrological modeling, drought risk mitigation, or pol
         </div>
       </div>
 
-      {/* Chat Container */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md shadow-2xl flex flex-col h-[600px] overflow-hidden">
+      {/* Chat Container - Expansive Full Screen Cockpit */}
+      <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 backdrop-blur-xl shadow-2xl flex flex-col h-[calc(100vh-240px)] min-h-[720px] overflow-hidden">
         {/* Messages Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6">
           {messages.map((msg) => {
             const isUser = msg.sender === "user";
             return (
               <div
                 key={msg.id}
-                className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+                className={`flex gap-3 sm:gap-4 ${isUser ? "justify-end" : "justify-start"}`}
               >
                 {!isUser && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 text-white shadow-md">
-                    <Bot className="h-4 w-4" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
+                    <Bot className="h-5 w-5" />
                   </div>
                 )}
 
-                <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
+                <div className={`max-w-[94%] sm:max-w-[88%] lg:max-w-[84%] rounded-3xl px-5 py-4 text-xs sm:text-sm leading-relaxed ${
                   isUser
-                    ? "bg-cyan-600 text-white rounded-br-none shadow-md"
-                    : "bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none shadow-lg"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none shadow-xl shadow-cyan-600/10"
+                    : "bg-slate-900/90 border border-slate-800/90 text-slate-200 rounded-bl-none shadow-2xl"
                 }`}>
-                  <div className="whitespace-pre-line space-y-2">
-                    {msg.text.split("\n\n").map((paragraph, i) => (
-                      <p key={i}>{paragraph}</p>
-                    ))}
+                  <div className="prose prose-invert prose-sm max-w-none text-slate-200">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h3: ({ node, ...props }) => <h3 className="text-sm sm:text-base font-bold text-cyan-300 mt-2 mb-1.5" {...props} />,
+                        p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1 text-slate-300" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1 text-slate-300" {...props} />,
+                        li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-bold text-white" {...props} />,
+                        table: ({ node, ...props }) => (
+                          <div className="my-2.5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                            <table className="w-full text-[11px] text-left border-collapse" {...props} />
+                          </div>
+                        ),
+                        th: ({ node, ...props }) => <th className="p-2 border-b border-slate-800 bg-slate-900/80 font-bold text-cyan-300" {...props} />,
+                        td: ({ node, ...props }) => <td className="p-2 border-b border-slate-800/60 text-slate-300" {...props} />,
+                        code: ({ node, ...props }) => <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[11px] text-cyan-300" {...props} />,
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
                   </div>
 
                   <div className={`mt-2 text-[10px] ${isUser ? "text-cyan-200 text-right" : "text-slate-500 text-left"}`}>
@@ -143,13 +187,29 @@ How can I assist you with hydrological modeling, drought risk mitigation, or pol
                 </div>
 
                 {isUser && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 text-slate-300 shadow-md">
                     <User className="h-4 w-4" />
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex gap-3 justify-start items-center">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 text-white shadow-md">
+                <Bot className="h-4 w-4" />
+              </div>
+              <div className="rounded-2xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs text-slate-400 rounded-bl-none shadow-lg flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="text-[11px] text-slate-400 font-mono ml-1">Analyzing CGWB hydrogeology models...</span>
+              </div>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
