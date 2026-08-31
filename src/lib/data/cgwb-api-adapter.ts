@@ -9,20 +9,25 @@ export interface CGWBApiResponse<T> {
 }
 
 class CGWBApiAdapter {
-  public apiBaseUrl: string =
-    import.meta.env.VITE_API_URL ||
-    (typeof window !== "undefined" && window.location.hostname === "localhost"
-      ? ""
-      : "https://aquaguard-backend-3cu8.onrender.com");
   private isServerOnline: boolean = true;
 
-  public setBaseUrl(url: string) {
-    this.apiBaseUrl = url;
+  public getApiBaseUrl(): string {
+    if (import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL;
+    }
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") {
+        return ""; // Local Vite dev server proxy
+      }
+    }
+    return "https://aquaguard-backend-3cu8.onrender.com";
   }
 
   public async checkHealth(): Promise<boolean> {
     try {
-      const res = await fetch(`${this.apiBaseUrl}/api/predict`, { method: "OPTIONS" });
+      const baseUrl = this.getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/predict`, { method: "OPTIONS" });
       this.isServerOnline = res.ok || res.status === 405;
       return true;
     } catch (e) {
@@ -48,9 +53,10 @@ class CGWBApiAdapter {
         horizon_years: params.targetYearHorizon,
       };
 
-      console.log("[AquaGuard] Sending ML prediction request to:", `${this.apiBaseUrl}/api/predict`, payload);
+      const baseUrl = this.getApiBaseUrl();
+      console.log("[AquaGuard] Sending ML prediction request to:", `${baseUrl}/api/predict`, payload);
 
-      const response = await fetch(`${this.apiBaseUrl}/api/predict`, {
+      const response = await fetch(`${baseUrl}/api/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -139,7 +145,8 @@ class CGWBApiAdapter {
         risk_level: prediction.riskLevel,
       };
 
-      const response = await fetch(`${this.apiBaseUrl}/api/assistant`, {
+      const baseUrl = this.getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/assistant`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
