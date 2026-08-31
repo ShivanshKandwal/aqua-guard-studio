@@ -9,7 +9,11 @@ export interface CGWBApiResponse<T> {
 }
 
 class CGWBApiAdapter {
-  public apiBaseUrl: string = "";
+  public apiBaseUrl: string =
+    import.meta.env.VITE_API_URL ||
+    (typeof window !== "undefined" && window.location.hostname === "localhost"
+      ? ""
+      : "https://aquaguard-backend-3cu8.onrender.com");
   private isServerOnline: boolean = true;
 
   public setBaseUrl(url: string) {
