@@ -47,38 +47,7 @@ export const PoliciesPage: React.FC = () => {
 
   // Accordion & View State
   const [expandedPolicyId, setExpandedPolicyId] = useState<string | null>("pol-borewell-ban");
-  const [activeTab, setActiveTab] = useState<"directives" | "custom-eval" | "capex-comparison">("directives");
-
-  // Custom PDF/Synopsis Upload Form State
-  const [docTitle, setDocTitle] = useState("Delhi Aquifer Rejuvenation & Sponge City Draft 2026");
-  const [docSnippet, setDocSnippet] = useState(
-    "Policy Proposal: Mandate mandatory deep-shaft rainwater harvesting injection wells along arterial Yamuna floodplains and industrial corridors. Replace all groundwater draft for commercial HVAC cooling with tertiary treated sewage effluent from Coronation Pillar STP. Impose progressive volumetric extraction cess on bulk commercial users with IoT telemetry meters."
-  );
-  const [customAnalysis, setCustomAnalysis] = useState<CustomPolicyEvaluation | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const handleAnalyzeCustomDoc = () => {
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      const evaluation = analyzeCustomPolicyDocument(docTitle, docSnippet, district);
-      setCustomAnalysis(evaluation);
-      setIsAnalyzing(false);
-      setActiveTab("custom-eval");
-    }, 600);
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "IMMEDIATE_EMERGENCY":
-        return <span className="rounded-md bg-red-950 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-400 border border-red-800">Immediate Emergency</span>;
-      case "HIGH_REGULATORY":
-        return <span className="rounded-md bg-amber-950 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-800">High Regulatory</span>;
-      case "MEDIUM_INCENTIVE":
-        return <span className="rounded-md bg-blue-950 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-400 border border-blue-800">Incentive Driven</span>;
-      default:
-        return <span className="rounded-md bg-emerald-950 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-800">Sustainability Norm</span>;
-    }
-  };
+  const [activeTab, setActiveTab] = useState<"directives" | "capex-comparison">("directives");
 
   // Comparative Capex vs Yield Data for Chart
   const capexComparisonData = policy.directives.map((d) => ({
@@ -95,19 +64,25 @@ export const PoliciesPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
-              <ShieldAlert className="h-3 w-3" /> CGWB Statutory Directives & AI Policy Sandbox
+              <ShieldAlert className="h-3 w-3" /> CGWB Statutory Directives & Compliance Matrix
             </span>
             <span className="text-xs text-slate-400">District: {district.name} ({prediction.riskLevel})</span>
           </div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white mt-1">
-            Groundwater Governance Hub & Custom Policy Evaluator
+            Groundwater Governance Hub & Official Directives
           </h1>
           <p className="text-xs text-slate-400 max-w-2xl mt-0.5">
-            Evaluate official CGWB mandates, compare CAPEX yields, or paste custom policy synopses/PDF extracts to generate instant multi-year impact trajectories.
+            Explore official Central Ground Water Board mandates, statutory compliance checklists, and comparative CAPEX vs volumetric recovery benchmarks.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/policy-evaluator"
+            className="flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-950/40 px-3.5 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition shadow-md shadow-purple-500/10"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-purple-400" /> Open Policy Evaluator
+          </Link>
           <Link
             to="/"
             className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition"
@@ -139,16 +114,6 @@ export const PoliciesPage: React.FC = () => {
             }`}
           >
             <Banknote className="h-3.5 w-3.5" /> CAPEX & Yield Matrix
-          </button>
-          <button
-            onClick={() => setActiveTab("custom-eval")}
-            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
-              activeTab === "custom-eval"
-                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <UploadCloud className="h-3.5 w-3.5" /> Custom Policy Sandbox {customAnalysis && "✓"}
           </button>
         </div>
 
@@ -378,202 +343,21 @@ export const PoliciesPage: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 3: CUSTOM PDF / SYNOPSIS POLICY EVALUATOR SANDBOX */}
-      {activeTab === "custom-eval" && (
-        <div className="space-y-6">
-          {/* Document Input Console */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-md shadow-xl space-y-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <FileCode className="h-4 w-4 text-purple-400" />
-                <h3 className="font-semibold text-base text-slate-100">
-                  Custom Policy / PDF Synopsis AI Evaluator
-                </h3>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Paste the synopsis, executive summary, or PDF text of a proposed policy to simulate its potential MLD yield, capital outlay, and 8-year aquifer rebound trajectory.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                  Policy Document Title
-                </label>
-                <input
-                  type="text"
-                  value={docTitle}
-                  onChange={(e) => setDocTitle(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-100 focus:border-purple-500 focus:outline-none"
-                  placeholder="e.g. Yamuna Aquifer Rejuvenation Directive 2026"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                  Policy Executive Synopsis / PDF Content
-                </label>
-                <textarea
-                  rows={4}
-                  value={docSnippet}
-                  onChange={(e) => setDocSnippet(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-xs text-slate-200 focus:border-purple-500 focus:outline-none leading-relaxed"
-                  placeholder="Paste policy clauses, regulatory frameworks, RWH mandates, effluent targets..."
-                />
-              </div>
-
-              <button
-                onClick={handleAnalyzeCustomDoc}
-                disabled={isAnalyzing || !docSnippet.trim()}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 shadow-lg shadow-purple-500/20"
-              >
-                <Sparkles className="h-4 w-4" />
-                {isAnalyzing ? "Simulating Hydrogeological Trajectory..." : "Run AI Policy Impact Simulation"}
-              </button>
-            </div>
-          </div>
-
-          {/* Evaluation Results Dossier */}
-          {customAnalysis && (
-            <div className="rounded-2xl border border-purple-500/40 bg-slate-900/80 p-6 backdrop-blur-md shadow-2xl space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-purple-500/20 px-2 py-0.5 text-xs font-bold text-purple-300 border border-purple-500/30">
-                      Simulation Dossier: {customAnalysis.sourceTitle}
-                    </span>
-                    <span className="text-xs text-slate-400">Target Aquifer: {district.name}</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-white mt-1">
-                    AI Feasibility & Multi-Year Water Rebound Analysis
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-slate-950 px-3 py-1.5 border border-slate-800 text-center">
-                    <div className="text-[10px] text-slate-400">Readiness Score</div>
-                    <div className="font-mono text-base font-bold text-purple-300">{customAnalysis.readinessScore}/100</div>
-                  </div>
-                  <div className="rounded-xl bg-slate-950 px-3 py-1.5 border border-slate-800 text-center">
-                    <div className="text-[10px] text-slate-400">Feasibility</div>
-                    <div className="font-mono text-base font-bold text-emerald-400">{customAnalysis.feasibilityRating}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* KPI Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-xl bg-slate-950/80 p-3.5 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Estimated Water Yield</span>
-                  <span className="font-mono text-xl font-bold text-emerald-400">{customAnalysis.estimatedNetWaterRecoveryMld} MLD</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Daily Aquifer Relief</span>
-                </div>
-                <div className="rounded-xl bg-slate-950/80 p-3.5 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Estimated Budget</span>
-                  <span className="font-mono text-xl font-bold text-purple-300">₹{customAnalysis.estimatedBudgetCrores} Cr</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">CAPEX Outlay</span>
-                </div>
-                <div className="rounded-xl bg-slate-950/80 p-3.5 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">CGWA Norms Alignment</span>
-                  <span className="font-mono text-xl font-bold text-cyan-300">{customAnalysis.regulatoryAlignment.cgwaNormsMatchPct}%</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Compliance Match</span>
-                </div>
-                <div className="rounded-xl bg-slate-950/80 p-3.5 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">8-Year Water Table Rebound</span>
-                  <span className="font-mono text-xl font-bold text-emerald-300">
-                    +{customAnalysis.impactTrajectory[customAnalysis.impactTrajectory.length - 1].aquiferLevelReboundM}m
-                  </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Estimated Rebound</span>
-                </div>
-              </div>
-
-              {/* 8-Year Simulated Impact Trajectory Chart */}
-              <div className="rounded-xl bg-slate-950/90 p-4 border border-slate-800">
-                <div className="flex justify-between items-center text-xs mb-2">
-                  <span className="font-semibold text-slate-200">
-                    Simulated 8-Year Cumulative Water Recovery & Aquifer Rebound Trajectory
-                  </span>
-                  <span className="text-cyan-400 font-mono text-[11px]">2026–2033 Multi-Year Projection</span>
-                </div>
-                <div className="h-60 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={customAnalysis.impactTrajectory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="reboundGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 11 }} />
-                      <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "12px", color: "#f8fafc" }}
-                        formatter={(val: any, name: string) => {
-                          if (name === "cumulativeWaterSavedMld") return [`${val} MLD`, "Cumulative Recovery"];
-                          if (name === "aquiferLevelReboundM") return [`+${val} m`, "Water Table Rebound"];
-                          return [val, name];
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
-                      <Area type="monotone" name="Cumulative Water Saved (MLD)" dataKey="cumulativeWaterSavedMld" stroke="#a855f7" strokeWidth={2.5} fillOpacity={1} fill="url(#reboundGrad)" />
-                      <Line type="monotone" name="Aquifer Rebound (+m)" dataKey="aquiferLevelReboundM" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Strategic SWOT & Recommendations */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                {/* Strengths */}
-                <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/20 p-4 space-y-2">
-                  <h4 className="font-bold text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Strategic Strengths:
-                  </h4>
-                  <ul className="space-y-1.5 text-slate-300">
-                    {customAnalysis.strengths.map((s, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-emerald-400">•</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Vulnerabilities */}
-                <div className="rounded-xl border border-amber-900/30 bg-amber-950/20 p-4 space-y-2">
-                  <h4 className="font-bold text-amber-400 flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5" /> Implementation Challenges:
-                  </h4>
-                  <ul className="space-y-1.5 text-slate-300">
-                    {customAnalysis.vulnerabilities.map((v, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-amber-400">•</span>
-                        <span>{v}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Recommendations */}
-                <div className="rounded-xl border border-cyan-900/30 bg-cyan-950/20 p-4 space-y-2">
-                  <h4 className="font-bold text-cyan-300 flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" /> Policy Optimization Tips:
-                  </h4>
-                  <ul className="space-y-1.5 text-slate-300">
-                    {customAnalysis.strategicRecommendations.map((r, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-cyan-400">•</span>
-                        <span>{r}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+      {/* Note linking to dedicated Policy Evaluator */}
+      <div className="rounded-2xl border border-purple-500/20 bg-purple-950/10 p-4 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-purple-400 shrink-0" />
+          <span>
+            Need to evaluate a custom legislative draft or proposal? Use our dedicated <strong>Policy Evaluator</strong> tab with real-time Leaflet city-impact GIS mapping and multi-horizon trajectory graphs.
+          </span>
         </div>
-      )}
+        <Link
+          to="/policy-evaluator"
+          className="shrink-0 rounded-xl bg-purple-600 px-3.5 py-1.5 font-semibold text-white hover:bg-purple-500 transition text-[11px]"
+        >
+          Go to Policy Evaluator →
+        </Link>
+      </div>
     </div>
   );
 };

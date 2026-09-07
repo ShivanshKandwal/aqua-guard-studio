@@ -16,26 +16,26 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#060913]/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3.5 sm:px-8 lg:px-10">
+    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#060913]/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1680px] items-center justify-between px-3 py-2.5 sm:px-6 lg:px-8 gap-3">
         {/* Brand */}
-        <Link to="/" className="flex items-center gap-3.5 group">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 via-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform duration-200">
-            <Droplets className="h-5 w-5" />
+        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-500/25 group-hover:scale-105 transition-transform duration-200">
+            <Droplets className="h-4 w-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg tracking-tight text-white group-hover:text-cyan-300 transition-colors">AquaGuard</span>
-              <span className="rounded-full bg-cyan-950/80 px-2 py-0.5 text-[10px] font-bold text-cyan-400 border border-cyan-800/70 shadow-sm">
-                STUDIO 2.0
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-base tracking-tight text-white group-hover:text-cyan-300 transition-colors">AquaGuard</span>
+              <span className="rounded-full bg-cyan-950/80 px-1.5 py-0.2 text-[9px] font-bold text-cyan-400 border border-cyan-800/70 shadow-sm">
+                2.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">Groundwater Intelligence • CGWB NCR</p>
+            <p className="text-[10px] text-slate-400 font-medium hidden sm:block">CGWB Groundwater Intelligence</p>
           </div>
         </Link>
 
         {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1">
+        <nav className="flex items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 shrink-0">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
@@ -43,28 +43,28 @@ export const Navbar: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
                     ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
                     : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {link.label}
+                <span className="whitespace-nowrap">{link.label}</span>
               </Link>
             );
           })}
         </nav>
 
         {/* Global Selectors */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {/* District Picker */}
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5">
-            <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">District:</span>
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5">
+            <span className="text-[10px] text-slate-500 font-medium hidden md:inline">District:</span>
             <select
               value={selectedDistrictId}
               onChange={(e) => setSelectedDistrictId(e.target.value)}
-              className="bg-transparent text-xs font-medium text-slate-200 outline-none cursor-pointer"
+              className="bg-transparent text-xs font-medium text-slate-200 outline-none cursor-pointer max-w-[140px] sm:max-w-none truncate"
             >
               {districts.map((d) => (
                 <option key={d.id} value={d.id} className="bg-slate-900 text-slate-100">
