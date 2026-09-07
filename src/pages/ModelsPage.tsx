@@ -115,33 +115,29 @@ export const ModelsPage: React.FC = () => {
                   {m.description}
                 </p>
 
-                {/* Primary Accuracy Metric Badge */}
-                <div className="mt-4 rounded-xl bg-gradient-to-r from-cyan-950/40 to-slate-950/60 p-3 border border-cyan-900/40 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider block">Model Accuracy</span>
-                      <span className="text-[10px] text-slate-500">Validation on 2023-2024 Holdout</span>
-                    </div>
+                {/* Benchmark Metrics Grid: R2 Score & RMSE */}
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-950/80 p-3.5 border border-slate-800/90">
+                  <div className="text-center border-r border-slate-800/80 pr-2">
+                    <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">R² Score</div>
+                    <div className="font-mono text-lg font-extrabold text-emerald-400 mt-0.5">{pred.metrics.r2}</div>
+                    <span className="text-[10px] text-slate-500">Variance Explained</span>
                   </div>
-                  <div className="text-right">
-                    <span className="font-mono text-base font-extrabold text-cyan-300">{pred.metrics.accuracyPct}%</span>
+                  <div className="text-center pl-2">
+                    <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">RMSE</div>
+                    <div className="font-mono text-lg font-extrabold text-cyan-300 mt-0.5">{pred.metrics.rmse}m</div>
+                    <span className="text-[10px] text-slate-500">Root Mean Sq. Error</span>
                   </div>
                 </div>
 
-                {/* Benchmark Metrics Grid */}
-                <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-slate-950/70 p-3 border border-slate-800/80">
-                  <div className="text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">RMSE</div>
-                    <div className="font-mono text-xs font-bold text-slate-200">{pred.metrics.rmse}m</div>
+                {/* Additional Statistical Diagnostics */}
+                <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-slate-950/40 p-2 border border-slate-800/50 text-[11px]">
+                  <div className="flex justify-between px-1">
+                    <span className="text-slate-500">MAE:</span>
+                    <span className="font-mono font-semibold text-slate-300">{pred.metrics.mae}m</span>
                   </div>
-                  <div className="text-center border-x border-slate-800">
-                    <div className="text-[10px] text-slate-500 font-medium">R² Score</div>
-                    <div className="font-mono text-xs font-bold text-emerald-400">{pred.metrics.r2}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-[10px] text-slate-500 font-medium">MAE</div>
-                    <div className="font-mono text-xs font-bold text-slate-200">{pred.metrics.mae}m</div>
+                  <div className="flex justify-between px-1 border-l border-slate-800">
+                    <span className="text-slate-500">Latency:</span>
+                    <span className="font-mono font-semibold text-purple-300">{pred.metrics.inferenceTimeMs} ms</span>
                   </div>
                 </div>
 
@@ -149,10 +145,6 @@ export const ModelsPage: React.FC = () => {
                 <div className="mt-4 flex items-center justify-between text-xs border-t border-slate-800 pt-3">
                   <span className="text-slate-400">Simulated Depth:</span>
                   <span className="font-mono font-bold text-cyan-300">{pred.predictedWaterLevelM} mbgl</span>
-                </div>
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Inference Latency:</span>
-                  <span className="font-mono font-bold text-slate-200">{pred.metrics.inferenceTimeMs} ms</span>
                 </div>
               </div>
 
