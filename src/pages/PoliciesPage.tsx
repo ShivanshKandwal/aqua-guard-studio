@@ -57,6 +57,31 @@ export const PoliciesPage: React.FC = () => {
     paybackYears: d.metrics.paybackPeriodYears,
   }));
 
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "Immediate Mandate":
+      case "High":
+        return (
+          <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-300 border border-red-500/30">
+            Immediate Mandate
+          </span>
+        );
+      case "Phased (6 Months)":
+      case "Medium":
+        return (
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
+            Phased (6M)
+          </span>
+        );
+      default:
+        return (
+          <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-300 border border-cyan-500/30">
+            Advisory
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
