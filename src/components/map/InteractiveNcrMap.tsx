@@ -7,12 +7,24 @@ interface InteractiveNcrMapProps {
   policyImpactMode?: boolean;
   policyReboundM?: number;
   policyRecoveryMld?: number;
+  districtImpacts?: Record<
+    string,
+    {
+      baselineExtractionPct: number;
+      simulatedExtractionPct: number;
+      extractionReductionPct: number;
+      reboundM: number;
+      newRiskLevel: string;
+      isTarget: boolean;
+    }
+  >;
 }
 
 export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
   policyImpactMode = false,
   policyReboundM = 0,
   policyRecoveryMld = 0,
+  districtImpacts,
 }) => {
   const { districts, selectedDistrictId, setSelectedDistrictId, getDistrictPrediction, params, activeModelId } = useStudioStore();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -111,7 +123,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
     };
   }, [districts]);
 
-  // 3. Render and Update GeoJSON Polygon Layer when data, parameters, or selection change
+  // 3. Render and Update GeoJSON Polygon Layer when data, parameters, selection, or policy impact mode change
   useEffect(() => {
     if (!mapInstanceRef.current || !geoJsonData) return;
 
@@ -140,10 +152,14 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
         const prediction = getDistrictPrediction(districtId);
         let risk = prediction.riskLevel;
 
-        // If policy impact mode is enabled, simulate upgraded risk category
-        if (policyImpactMode && policyReboundM > 0) {
-          const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
-          risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
+        // If policy impact mode is enabled, evaluate specific district impact
+        if (policyImpactMode) {
+          if (districtImpacts && districtImpacts[districtId]) {
+            risk = districtImpacts[districtId].newRiskLevel as any;
+          } else if (policyReboundM > 0) {
+            const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
+            risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
+          }
         }
 
         const color = getRiskColor(risk);
@@ -152,7 +168,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
           color: isSelected ? "#38bdf8" : policyImpactMode ? "#10b981" : "#0f172a",
           weight: isSelected ? 3 : policyImpactMode ? 1.8 : 1.2,
           fillColor: color,
-          fillOpacity: isSelected ? 0.8 : policyImpactMode ? 0.65 : 0.52,
+          fillOpacity: isSelected ? 0.82 : policyImpactMode ? 0.70 : 0.52,
         };
       };
 
@@ -167,24 +183,34 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
             const prediction = getDistrictPrediction(district.id);
             let risk = prediction.riskLevel;
             let finalDepth = prediction.predictedWaterLevelM;
+            let extractReduction = 0;
+            let reboundVal = policyReboundM;
 
-            if (policyImpactMode && policyReboundM > 0) {
-              const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
-              risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
-              finalDepth = Number(Math.max(2.0, prediction.predictedWaterLevelM - policyReboundM).toFixed(2));
+            if (policyImpactMode) {
+              if (districtImpacts && districtImpacts[districtId]) {
+                const dImp = districtImpacts[districtId];
+                risk = dImp.newRiskLevel as any;
+                extractReduction = dImp.extractionReductionPct;
+                reboundVal = dImp.reboundM;
+                finalDepth = Number(Math.max(2.0, prediction.predictedWaterLevelM - reboundVal).toFixed(2));
+              } else if (policyReboundM > 0) {
+                const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
+                risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
+                finalDepth = Number(Math.max(2.0, prediction.predictedWaterLevelM - policyReboundM).toFixed(2));
+              }
             }
 
             const riskCol = getRiskColor(risk);
 
             layer.bindTooltip(
-              `<div style="font-family:system-ui,-apple-system,sans-serif;min-width:210px;color:#f8fafc;">
+              `<div style="font-family:system-ui,-apple-system,sans-serif;min-width:215px;color:#f8fafc;">
                 <div style="font-weight:700;font-size:13px;color:#38bdf8;border-bottom:1px solid #334155;padding-bottom:5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
                   <span style="color:#ffffff;font-size:13px;font-weight:700;">${district.name}</span>
                   <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${riskCol}28;color:${riskCol};border:1px solid ${riskCol}55;">${risk}</span>
                 </div>
                 ${policyImpactMode ? `
-                <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);padding:4px 6px;border-radius:6px;margin-bottom:6px;font-size:10px;color:#6ee7b7;font-weight:600;">
-                  ⚡ Policy Effect: +${policyReboundM}m Rebound (${policyRecoveryMld} MLD)
+                <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);padding:5px 7px;border-radius:6px;margin-bottom:6px;font-size:10px;color:#6ee7b7;font-weight:600;">
+                  ⚡ Policy Effect: +${reboundVal}m Rebound ${extractReduction > 0 ? `(-${extractReduction}% Draft)` : ''}
                 </div>` : ''}
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;">
                   <span style="color:#94a3b8;">${policyImpactMode ? "Post-Policy Depth:" : "Current Depth:"}</span>
@@ -224,7 +250,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
 
       geoJsonLayerRef.current = geoJsonLayer;
     });
-  }, [geoJsonData, selectedDistrictId, params, activeModelId, districts]);
+  }, [geoJsonData, selectedDistrictId, params, activeModelId, districts, policyImpactMode, policyReboundM, policyRecoveryMld, districtImpacts]);
 
   return (
     <div className="relative h-full min-h-[440px] w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">

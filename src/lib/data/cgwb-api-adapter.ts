@@ -8,6 +8,33 @@ export interface CGWBApiResponse<T> {
   status: "ONLINE" | "FALLBACK_LOCAL" | "SYNCED";
 }
 
+export interface ComprehensivePolicyResult {
+  success: boolean;
+  readinessScore: number;
+  feasibilityRating: "High" | "Moderate" | "Challenging";
+  waterRecoveryMld: number;
+  estimatedCapexCrores: number;
+  paybackYears: number;
+  tenYearReboundM: number;
+  sectorBreakdown: { sector: string; mld: number; color: string }[];
+  trajectory: { year: number; compliancePct: number; waterSavedMld: number; reboundM: number }[];
+  financials: { year: string; cumulativeCapex: number; cumulativeSavings: number }[];
+  districtImpacts: Record<
+    string,
+    {
+      baselineExtractionPct: number;
+      simulatedExtractionPct: number;
+      extractionReductionPct: number;
+      reboundM: number;
+      newRiskLevel: string;
+      isTarget: boolean;
+    }
+  >;
+  aiPassage: string;
+  modelUsed: string;
+  timestamp: string;
+}
+
 class CGWBApiAdapter {
   private isServerOnline: boolean = true;
 
@@ -167,7 +194,7 @@ class CGWBApiAdapter {
     policyTitle: string,
     policyText: string,
     districtId: string
-  ): Promise<{ success: boolean; ai_critique: string; model_used: string; timestamp: string } | null> {
+  ): Promise<ComprehensivePolicyResult | null> {
     try {
       const baseUrl = this.getApiBaseUrl();
       const response = await fetch(`${baseUrl}/api/evaluate-policy`, {

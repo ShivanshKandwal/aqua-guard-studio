@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useStudioStore } from "../lib/store/studio-store";
-import { analyzeCustomPolicyDocument, type CustomPolicyEvaluation } from "../lib/policy/policy-engine";
-import { cgwbApiAdapter } from "../lib/data/cgwb-api-adapter";
+import { cgwbApiAdapter, type ComprehensivePolicyResult } from "../lib/data/cgwb-api-adapter";
 import { InteractiveNcrMap } from "../components/map/InteractiveNcrMap";
 import {
   FileCheck2,
@@ -17,6 +16,7 @@ import {
   RotateCcw,
   Zap,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -68,68 +68,47 @@ export const PolicyEvaluatorPage: React.FC = () => {
   const [docTitle, setDocTitle] = useState(PRESET_POLICIES[0].title);
   const [docSynopsis, setDocSynopsis] = useState(PRESET_POLICIES[0].text);
   const [mapImpactMode, setMapImpactMode] = useState<boolean>(true);
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState<number>(0);
 
-  // AI Review State
-  const [aiReview, setAiReview] = useState<{ text: string; model: string; time: string } | null>(null);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  // Dynamic API Evaluator State
+  const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
+  const [evaluatedResult, setEvaluatedResult] = useState<ComprehensivePolicyResult | null>(null);
 
-  // Instant Real-Time Mathematical & Hydrogeological Evaluation
-  const analysis: CustomPolicyEvaluation = useMemo(() => {
-    return analyzeCustomPolicyDocument(docSynopsis, docTitle, district);
-  }, [docSynopsis, docTitle, district]);
+  // Execution trigger
+  const runEvaluation = useCallback(
+    async (titleToEval: string, textToEval: string) => {
+      if (!textToEval.trim()) return;
+      setIsEvaluating(true);
 
-  // Graph 1: 10-Year Water Rebound Trajectory Data
-  const trajectoryData = useMemo(() => {
-    const baseYear = 2026;
-    return Array.from({ length: 10 }, (_, i) => {
-      const year = baseYear + i;
-      const compliancePct = Math.min(95, Math.round(15 + (i + 1) * 8.5));
-      const waterSavedMld = Number(((analysis.estimatedNetWaterRecoveryMld * (compliancePct / 100))).toFixed(1));
-      const reboundM = Number(((waterSavedMld * 0.05 * (i + 1) * (district.aquiferType === "Quartzite" ? 0.6 : 1.1))).toFixed(2));
-      return {
-        year,
-        compliancePct,
-        waterSavedMld,
-        reboundM,
-      };
-    });
-  }, [analysis, district]);
+      const result = await cgwbApiAdapter.evaluateCustomPolicy(titleToEval, textToEval, district.id);
+      if (result) {
+        setEvaluatedResult(result);
+      }
+      setIsEvaluating(false);
+    },
+    [district.id]
+  );
 
-  // Graph 2: Sectoral Water Relief Breakdown Data (MLD)
-  const sectoralData = useMemo(() => {
-    const total = analysis.estimatedNetWaterRecoveryMld;
-    const isDomestic = docSynopsis.toLowerCase().includes("rwh") || docSynopsis.toLowerCase().includes("residential");
-    const isIndustrial = docSynopsis.toLowerCase().includes("stp") || docSynopsis.toLowerCase().includes("industrial") || docSynopsis.toLowerCase().includes("moratorium");
-    const isAgri = docSynopsis.toLowerCase().includes("drip") || docSynopsis.toLowerCase().includes("agri") || docSynopsis.toLowerCase().includes("crop");
+  // Initial deduction on mount or when district changes
+  useEffect(() => {
+    runEvaluation(docTitle, docSynopsis);
+  }, [district.id]);
 
-    let domPct = isDomestic ? 45 : 25;
-    let indPct = isIndustrial ? 40 : 25;
-    let agriPct = isAgri ? 35 : 15;
-    const sum = domPct + indPct + agriPct;
+  // Derive active display values
+  const readinessScore = evaluatedResult?.readinessScore ?? 85;
+  const feasibilityRating = evaluatedResult?.feasibilityRating ?? "High";
+  const waterRecoveryMld = evaluatedResult?.waterRecoveryMld ?? 32.5;
+  const estimatedCapexCrores = evaluatedResult?.estimatedCapexCrores ?? 64.0;
+  const tenYearReboundM = evaluatedResult?.tenYearReboundM ?? 12.4;
+  const paybackYears = evaluatedResult?.paybackYears ?? 4.6;
 
-    return [
-      { sector: "Domestic RWH & Metering", mld: Number(((total * domPct) / sum).toFixed(1)), color: "#06b6d4" },
-      { sector: "Industrial STP & Effluent", mld: Number(((total * indPct) / sum).toFixed(1)), color: "#a855f7" },
-      { sector: "Agricultural Micro-Drip", mld: Number(((total * agriPct) / sum).toFixed(1)), color: "#10b981" },
-    ];
-  }, [analysis, docSynopsis]);
-
-  // Graph 3: Financial CAPEX Outlay vs Annual Operational Savings (₹ Cr)
-  const financialData = useMemo(() => {
-    const capex = analysis.estimatedBudgetCrores;
-    const annualSavings = Number((analysis.estimatedNetWaterRecoveryMld * 1.85).toFixed(1));
-    return [
-      { year: "Year 1", cumulativeCapex: Number((capex * 0.55).toFixed(1)), cumulativeSavings: annualSavings },
-      { year: "Year 2", cumulativeCapex: Number((capex * 0.85).toFixed(1)), cumulativeSavings: annualSavings * 2.2 },
-      { year: "Year 3", cumulativeCapex: capex, cumulativeSavings: annualSavings * 3.6 },
-      { year: "Year 4", cumulativeCapex: capex, cumulativeSavings: annualSavings * 5.2 },
-      { year: "Year 5", cumulativeCapex: capex, cumulativeSavings: annualSavings * 7.0 },
-      { year: "Year 7", cumulativeCapex: capex, cumulativeSavings: annualSavings * 11.2 },
-    ];
-  }, [analysis]);
+  const trajectoryData = evaluatedResult?.trajectory ?? [];
+  const sectoralData = evaluatedResult?.sectorBreakdown ?? [];
+  const financialData = evaluatedResult?.financials ?? [];
+  const districtImpacts = evaluatedResult?.districtImpacts ?? {};
 
   // Graph 4: NCR Regional Risk Shift (Before vs After Policy)
-  const regionalShiftData = useMemo(() => {
+  const regionalShiftData = React.useMemo(() => {
     let baselineSafe = 0, baselineSemi = 0, baselineCrit = 0, baselineOver = 0;
     let postSafe = 0, postSemi = 0, postCrit = 0, postOver = 0;
 
@@ -140,45 +119,21 @@ export const PolicyEvaluatorPage: React.FC = () => {
       else if (pred.riskLevel === "Semi-Critical") baselineSemi++;
       else baselineSafe++;
 
-      const simulatedExtract = Math.max(45, pred.predictedExtractionPct - (analysis.estimatedNetWaterRecoveryMld * 0.75));
-      if (simulatedExtract > 100) postCrit++;
-      else if (simulatedExtract > 70) postSemi++;
+      const imp = districtImpacts[d.id];
+      const newRisk = imp ? imp.newRiskLevel : pred.riskLevel;
+      if (newRisk === "Over-Exploited") postOver++;
+      else if (newRisk === "Critical") postCrit++;
+      else if (newRisk === "Semi-Critical") postSemi++;
       else postSafe++;
     });
 
     return [
-      { category: "Safe (<70%)", baseline: baselineSafe, postPolicy: postSafe, color: "#10b981" },
+      { category: "Safe (<=70%)", baseline: baselineSafe, postPolicy: postSafe, color: "#10b981" },
       { category: "Semi-Critical", baseline: baselineSemi, postPolicy: postSemi, color: "#facc15" },
       { category: "Critical", baseline: baselineCrit, postPolicy: postCrit, color: "#f97316" },
       { category: "Over-Exploited", baseline: baselineOver, postPolicy: postOver, color: "#ef4444" },
     ];
-  }, [districts, getDistrictPrediction, analysis]);
-
-  // Handle Groq AI Review Execution
-  const handleRunAiEvaluation = async () => {
-    if (!docSynopsis.trim() || isAiLoading) return;
-    setIsAiLoading(true);
-
-    const res = await cgwbApiAdapter.evaluateCustomPolicy(docTitle, docSynopsis, district.id);
-    if (res && res.ai_critique) {
-      setAiReview({
-        text: res.ai_critique,
-        model: res.model_used,
-        time: res.timestamp,
-      });
-    } else {
-      setAiReview({
-        text: `### ⚖️ CGWA Statutory & Lithological Review for **${district.name}**\n\n` +
-          `- **Statutory Alignment:** The proposal for "${docTitle}" satisfies Central Ground Water Authority 2020 guidelines.\n` +
-          `- **Hydrogeological Strata Compatibility:** In ${district.name} (${district.aquiferType}), artificial recharge shafts require secondary siltation settling basins.\n` +
-          `- **Estimated Relief:** Projected ~${analysis.estimatedNetWaterRecoveryMld} MLD recovery across target zones.\n` +
-          `- **Recommended Action:** Ensure digital telemetry loggers are linked directly to India-WRIS monitoring databases.`,
-        model: "Local Hydrogeological Rules Engine (Fallback)",
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      });
-    }
-    setIsAiLoading(false);
-  };
+  }, [districts, getDistrictPrediction, districtImpacts]);
 
   return (
     <div className="space-y-7 pb-12">
@@ -217,18 +172,25 @@ export const PolicyEvaluatorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Top 4 KPI Metrics - Instant Feedback */}
+      {/* Top 4 KPI Metrics - Dynamic Deduction */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl border border-purple-500/30 bg-slate-900/60 p-4 backdrop-blur-md shadow-lg">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
             <span className="font-semibold uppercase tracking-wider text-[10px]">Readiness Score</span>
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
           </div>
-          <div className="text-2xl font-extrabold font-mono text-purple-300">
-            {analysis.readinessScore}<span className="text-xs text-slate-500 font-sans font-normal">/100</span>
+          <div className="text-2xl font-extrabold font-mono text-purple-300 flex items-baseline gap-1">
+            {isEvaluating ? (
+              <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+            ) : (
+              <>
+                {readinessScore}
+                <span className="text-xs text-slate-500 font-sans font-normal">/100</span>
+              </>
+            )}
           </div>
           <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Feasibility: {analysis.feasibilityRating}
+            <CheckCircle2 className="h-3 w-3" /> Feasibility: {feasibilityRating}
           </div>
         </div>
 
@@ -237,11 +199,17 @@ export const PolicyEvaluatorPage: React.FC = () => {
             <span className="font-semibold uppercase tracking-wider text-[10px]">Net Water Recovery</span>
             <Droplets className="h-3.5 w-3.5 text-cyan-400" />
           </div>
-          <div className="text-2xl font-extrabold font-mono text-cyan-300">
-            +{analysis.estimatedNetWaterRecoveryMld} <span className="text-xs text-slate-400 font-sans font-normal">MLD</span>
+          <div className="text-2xl font-extrabold font-mono text-cyan-300 flex items-baseline gap-1">
+            {isEvaluating ? (
+              <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+            ) : (
+              <>
+                +{waterRecoveryMld} <span className="text-xs text-slate-400 font-sans font-normal">MLD</span>
+              </>
+            )}
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            ~{Math.round(analysis.estimatedNetWaterRecoveryMld * 36.5)} HAM/year recharge
+            ~{Math.round(waterRecoveryMld * 36.5)} HAM/year recharge
           </div>
         </div>
 
@@ -250,11 +218,17 @@ export const PolicyEvaluatorPage: React.FC = () => {
             <span className="font-semibold uppercase tracking-wider text-[10px]">Estimated CAPEX</span>
             <Banknote className="h-3.5 w-3.5 text-amber-400" />
           </div>
-          <div className="text-2xl font-extrabold font-mono text-amber-300">
-            ₹{analysis.estimatedBudgetCrores} <span className="text-xs text-slate-400 font-sans font-normal">Cr</span>
+          <div className="text-2xl font-extrabold font-mono text-amber-300 flex items-baseline gap-1">
+            {isEvaluating ? (
+              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+            ) : (
+              <>
+                ₹{estimatedCapexCrores} <span className="text-xs text-slate-400 font-sans font-normal">Cr</span>
+              </>
+            )}
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Break-even: ~4.2 Years payback
+            Break-even: ~{paybackYears} Years payback
           </div>
         </div>
 
@@ -263,8 +237,14 @@ export const PolicyEvaluatorPage: React.FC = () => {
             <span className="font-semibold uppercase tracking-wider text-[10px]">10-Yr Table Rebound</span>
             <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <div className="text-2xl font-extrabold font-mono text-emerald-400">
-            +{trajectoryData[trajectoryData.length - 1].reboundM} <span className="text-xs text-slate-400 font-sans font-normal">meters</span>
+          <div className="text-2xl font-extrabold font-mono text-emerald-400 flex items-baseline gap-1">
+            {isEvaluating ? (
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
+            ) : (
+              <>
+                +{tenYearReboundM} <span className="text-xs text-slate-400 font-sans font-normal">meters</span>
+              </>
+            )}
           </div>
           <div className="text-[11px] text-emerald-300/80 mt-1">
             Projected steady recovery
@@ -282,33 +262,42 @@ export const PolicyEvaluatorPage: React.FC = () => {
               <h3 className="font-bold text-sm text-slate-100">Draft Policy Synopsis</h3>
             </div>
             <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
-              Live Real-Time Parsing
+              AI-Driven Deduction
             </span>
           </div>
 
           {/* Quick Preset Buttons */}
           <div>
             <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Load Benchmark Templates:
+              Load Benchmark Templates (Select to Deduce & View Map):
             </label>
             <div className="grid grid-cols-2 gap-1.5">
-              {PRESET_POLICIES.map((preset, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setDocTitle(preset.title);
-                    setDocSynopsis(preset.text);
-                  }}
-                  className="rounded-xl border border-slate-800 bg-slate-950/80 p-2 text-left hover:border-cyan-500/50 hover:bg-slate-800/40 transition group"
-                >
-                  <div className="text-[10px] font-bold text-cyan-400 group-hover:text-cyan-300 truncate">
-                    {preset.type}
-                  </div>
-                  <div className="text-[10px] text-slate-400 line-clamp-1">
-                    {preset.title}
-                  </div>
-                </button>
-              ))}
+              {PRESET_POLICIES.map((preset, idx) => {
+                const isSelected = selectedPresetIndex === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedPresetIndex(idx);
+                      setDocTitle(preset.title);
+                      setDocSynopsis(preset.text);
+                      runEvaluation(preset.title, preset.text);
+                    }}
+                    className={`rounded-xl border p-2 text-left transition group ${
+                      isSelected
+                        ? "border-cyan-500 bg-cyan-950/40 shadow-sm shadow-cyan-500/20"
+                        : "border-slate-800 bg-slate-950/80 hover:border-cyan-500/50 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className={`text-[10px] font-bold truncate ${isSelected ? "text-cyan-300" : "text-cyan-400 group-hover:text-cyan-300"}`}>
+                      {preset.type}
+                    </div>
+                    <div className="text-[10px] text-slate-400 line-clamp-1">
+                      {preset.title}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -346,17 +335,26 @@ export const PolicyEvaluatorPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex gap-2.5 pt-1">
             <button
-              onClick={handleRunAiEvaluation}
-              disabled={isAiLoading || !docSynopsis.trim()}
+              onClick={() => runEvaluation(docTitle, docSynopsis)}
+              disabled={isEvaluating || !docSynopsis.trim()}
               className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50 shadow-lg shadow-purple-500/25"
             >
-              <Sparkles className="h-4 w-4" />
-              {isAiLoading ? "Analyzing with Groq LLM..." : "Run AI Regulatory Critique"}
+              {isEvaluating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Deducing Parameters with AI...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> Deduce Parameters & Run AI Evaluation
+                </>
+              )}
             </button>
             <button
               onClick={() => {
+                setSelectedPresetIndex(0);
                 setDocTitle(PRESET_POLICIES[0].title);
                 setDocSynopsis(PRESET_POLICIES[0].text);
+                runEvaluation(PRESET_POLICIES[0].title, PRESET_POLICIES[0].text);
               }}
               className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-400 hover:text-white transition"
               title="Reset to default template"
@@ -375,7 +373,7 @@ export const PolicyEvaluatorPage: React.FC = () => {
                 <h3 className="font-bold text-sm text-slate-100">Spatial City Impact Map (Delhi NCR)</h3>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Hover over districts to inspect water table rebound and regulatory category shifts.
+                Hover over districts to inspect water table rebound and regulatory category shifts under this specific policy.
               </p>
             </div>
 
@@ -406,8 +404,9 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <div className="flex-1 min-h-[440px] rounded-2xl overflow-hidden border border-slate-800 relative">
             <InteractiveNcrMap
               policyImpactMode={mapImpactMode}
-              policyReboundM={trajectoryData[trajectoryData.length - 1].reboundM}
-              policyRecoveryMld={analysis.estimatedNetWaterRecoveryMld}
+              policyReboundM={tenYearReboundM}
+              policyRecoveryMld={waterRecoveryMld}
+              districtImpacts={districtImpacts}
             />
           </div>
         </div>
@@ -468,7 +467,7 @@ export const PolicyEvaluatorPage: React.FC = () => {
                 <p className="text-[10px] text-slate-400">Contribution from domestic, industrial, and agrarian interventions</p>
               </div>
               <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
-                {analysis.estimatedNetWaterRecoveryMld} MLD Total
+                +{waterRecoveryMld} MLD Total
               </span>
             </div>
             <div className="h-56 w-full">
@@ -501,7 +500,7 @@ export const PolicyEvaluatorPage: React.FC = () => {
                 <p className="text-[10px] text-slate-400">Financial break-even analysis across implementation timeline</p>
               </div>
               <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">
-                Break-Even: Year 4-5
+                Break-Even: ~{paybackYears} Years
               </span>
             </div>
             <div className="h-56 w-full">
@@ -567,45 +566,36 @@ export const PolicyEvaluatorPage: React.FC = () => {
                   CGWA Regulatory & Hydrogeological Review Dossier
                 </h3>
                 <span className="text-[10px] text-slate-400">
-                  {aiReview ? `Evaluated via ${aiReview.model} at ${aiReview.time}` : "Awaiting AI execution click or initial preview"}
+                  {evaluatedResult ? `Deduced via ${evaluatedResult.modelUsed} at ${evaluatedResult.timestamp}` : "Awaiting AI deduction execution"}
                 </span>
               </div>
             </div>
 
             <button
-              onClick={handleRunAiEvaluation}
-              disabled={isAiLoading}
+              onClick={() => runEvaluation(docTitle, docSynopsis)}
+              disabled={isEvaluating}
               className="flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition"
             >
-              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-              {isAiLoading ? "Analyzing..." : "Re-Run Critique"}
+              {isEvaluating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-purple-400" />}
+              {isEvaluating ? "Analyzing..." : "Re-Run Evaluation"}
             </button>
           </div>
 
           <div className="prose prose-invert prose-sm max-w-none text-slate-200">
-            {aiReview ? (
+            {evaluatedResult?.aiPassage ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {aiReview.text}
+                {evaluatedResult.aiPassage}
               </ReactMarkdown>
+            ) : isEvaluating ? (
+              <div className="flex items-center gap-3 py-8 text-slate-400">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+                <span>Extracting statutory clauses and computing hydrogeological metrics...</span>
+              </div>
             ) : (
               <div className="space-y-3 text-xs text-slate-300">
                 <p>
-                  Click <strong>"Run AI Regulatory Critique"</strong> to dispatch this draft synopsis to our specialized Central Ground Water Authority regulatory prompt on <strong>Groq Cloud (`openai/gpt-oss-20b`)</strong>.
+                  Click <strong>"Deduce Parameters & Run AI Evaluation"</strong> to send this policy synopsis to our AI deduction engine.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-1">
-                    <span className="font-bold text-cyan-300 block">Expected Assessment:</span>
-                    <span className="text-slate-400 block text-[11px]">
-                      Lithological infiltration capacity in {district.aquiferType}, drawdown cone buffering, and groundwater salinity mitigation.
-                    </span>
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-1">
-                    <span className="font-bold text-purple-300 block">Statutory Gatekeeping:</span>
-                    <span className="text-slate-400 block text-[11px]">
-                      Central Ground Water Authority Gazette 2020/2024 compliance, mandatory IoT telemetry, and Delhi Jal Board interlocks.
-                    </span>
-                  </div>
-                </div>
               </div>
             )}
           </div>
