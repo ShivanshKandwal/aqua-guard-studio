@@ -3,7 +3,17 @@ import { useStudioStore } from "../../lib/store/studio-store";
 import { getRiskColor, type CGWBDistrict } from "../../lib/data/cgwb-districts";
 import { Layers, Activity, Sparkles, MapPin } from "lucide-react";
 
-export const InteractiveNcrMap: React.FC = () => {
+interface InteractiveNcrMapProps {
+  policyImpactMode?: boolean;
+  policyReboundM?: number;
+  policyRecoveryMld?: number;
+}
+
+export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
+  policyImpactMode = false,
+  policyReboundM = 0,
+  policyRecoveryMld = 0,
+}) => {
   const { districts, selectedDistrictId, setSelectedDistrictId, getDistrictPrediction, params, activeModelId } = useStudioStore();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -128,13 +138,21 @@ export const InteractiveNcrMap: React.FC = () => {
         }
 
         const prediction = getDistrictPrediction(districtId);
-        const color = getRiskColor(prediction.riskLevel);
+        let risk = prediction.riskLevel;
+
+        // If policy impact mode is enabled, simulate upgraded risk category
+        if (policyImpactMode && policyReboundM > 0) {
+          const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
+          risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
+        }
+
+        const color = getRiskColor(risk);
 
         return {
-          color: isSelected ? "#38bdf8" : "#0f172a",
-          weight: isSelected ? 3 : 1.2,
+          color: isSelected ? "#38bdf8" : policyImpactMode ? "#10b981" : "#0f172a",
+          weight: isSelected ? 3 : policyImpactMode ? 1.8 : 1.2,
           fillColor: color,
-          fillOpacity: isSelected ? 0.75 : 0.52,
+          fillOpacity: isSelected ? 0.8 : policyImpactMode ? 0.65 : 0.52,
         };
       };
 
@@ -147,24 +165,37 @@ export const InteractiveNcrMap: React.FC = () => {
 
           if (district) {
             const prediction = getDistrictPrediction(district.id);
-            const riskCol = getRiskColor(prediction.riskLevel);
+            let risk = prediction.riskLevel;
+            let finalDepth = prediction.predictedWaterLevelM;
+
+            if (policyImpactMode && policyReboundM > 0) {
+              const simulatedExtraction = Math.max(45, prediction.predictedExtractionPct - (policyRecoveryMld * 0.75));
+              risk = simulatedExtraction > 100 ? "Critical" : simulatedExtraction > 70 ? "Semi-Critical" : "Safe";
+              finalDepth = Number(Math.max(2.0, prediction.predictedWaterLevelM - policyReboundM).toFixed(2));
+            }
+
+            const riskCol = getRiskColor(risk);
 
             layer.bindTooltip(
-              `<div style="font-family:system-ui,-apple-system,sans-serif;min-width:190px;color:#f8fafc;">
+              `<div style="font-family:system-ui,-apple-system,sans-serif;min-width:210px;color:#f8fafc;">
                 <div style="font-weight:700;font-size:13px;color:#38bdf8;border-bottom:1px solid #334155;padding-bottom:5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
                   <span style="color:#ffffff;font-size:13px;font-weight:700;">${district.name}</span>
-                  <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${riskCol}28;color:${riskCol};border:1px solid ${riskCol}55;">${prediction.riskLevel}</span>
+                  <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${riskCol}28;color:${riskCol};border:1px solid ${riskCol}55;">${risk}</span>
+                </div>
+                ${policyImpactMode ? `
+                <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);padding:4px 6px;border-radius:6px;margin-bottom:6px;font-size:10px;color:#6ee7b7;font-weight:600;">
+                  ⚡ Policy Effect: +${policyReboundM}m Rebound (${policyRecoveryMld} MLD)
+                </div>` : ''}
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;">
+                  <span style="color:#94a3b8;">${policyImpactMode ? "Post-Policy Depth:" : "Current Depth:"}</span>
+                  <strong style="color:#ffffff;font-size:12px;">${finalDepth} mbgl</strong>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;">
-                  <span style="color:#94a3b8;">Simulated Depth:</span>
-                  <strong style="color:#ffffff;font-size:12px;">${prediction.predictedWaterLevelM} mbgl</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;">
-                  <span style="color:#94a3b8;">Extraction Stage:</span>
-                  <strong style="color:${riskCol};font-size:12px;">${prediction.predictedExtractionPct}%</strong>
+                  <span style="color:#94a3b8;">Baseline Depth:</span>
+                  <span style="color:#94a3b8;">${district.baselineWaterLevelM} mbgl</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
-                  <span style="color:#94a3b8;">Aquifer Type:</span>
+                  <span style="color:#94a3b8;">Aquifer Strata:</span>
                   <span style="color:#e2e8f0;font-weight:600;">${district.aquiferType}</span>
                 </div>
               </div>`,

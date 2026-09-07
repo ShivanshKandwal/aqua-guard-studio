@@ -162,6 +162,34 @@ class CGWBApiAdapter {
       return null;
     }
   }
+
+  public async evaluateCustomPolicy(
+    policyTitle: string,
+    policyText: string,
+    districtId: string
+  ): Promise<{ success: boolean; ai_critique: string; model_used: string; timestamp: string } | null> {
+    try {
+      const baseUrl = this.getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/evaluate-policy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          policy_title: policyTitle,
+          policy_text: policyText,
+          district_id: districtId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.warn("Policy Evaluator API offline, using fallback:", err);
+      return null;
+    }
+  }
 }
 
 export const cgwbApiAdapter = new CGWBApiAdapter();

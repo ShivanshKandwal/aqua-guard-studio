@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Droplets, Compass, Bot, ShieldAlert, Cpu, Sparkles } from "lucide-react";
+import { Droplets, Compass, Bot, ShieldAlert, Cpu, Sparkles, FileCheck2 } from "lucide-react";
 import { useStudioStore } from "../../lib/store/studio-store";
 
 export const Navbar: React.FC = () => {
@@ -10,6 +10,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { path: "/", label: "Studio & Map", icon: Compass },
     { path: "/assistant", label: "AI Advisor", icon: Bot },
+    { path: "/policy-evaluator", label: "Policy Evaluator", icon: FileCheck2 },
     { path: "/policies", label: "Policies & Directives", icon: ShieldAlert },
     { path: "/models", label: "Model Benchmarks", icon: Cpu },
   ];
