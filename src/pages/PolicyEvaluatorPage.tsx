@@ -67,18 +67,21 @@ export const PolicyEvaluatorPage: React.FC = () => {
   // Policy Form State
   const [docTitle, setDocTitle] = useState(PRESET_POLICIES[0].title);
   const [docSynopsis, setDocSynopsis] = useState(PRESET_POLICIES[0].text);
-  const [mapImpactMode, setMapImpactMode] = useState<boolean>(true);
+  const [mapImpactMode, setMapImpactMode] = useState<boolean>(false);
   const [selectedPresetIndex, setSelectedPresetIndex] = useState<number>(0);
 
   // Dynamic API Evaluator State
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [evaluatedResult, setEvaluatedResult] = useState<ComprehensivePolicyResult | null>(null);
+  const [hasEvaluated, setHasEvaluated] = useState<boolean>(false);
 
   // Execution trigger
   const runEvaluation = useCallback(
     async (titleToEval: string, textToEval: string) => {
       if (!textToEval.trim()) return;
       setIsEvaluating(true);
+      setHasEvaluated(true);
+      setMapImpactMode(true); // Automatically toggle to Post-Policy Impact after evaluation!
 
       const result = await cgwbApiAdapter.evaluateCustomPolicy(titleToEval, textToEval, district.id);
       if (result) {
@@ -89,53 +92,17 @@ export const PolicyEvaluatorPage: React.FC = () => {
     [district.id]
   );
 
-  // Initial deduction on mount or when district changes
-  useEffect(() => {
-    runEvaluation(docTitle, docSynopsis);
-  }, [district.id]);
-
   // Derive active display values
-  const readinessScore = evaluatedResult?.readinessScore ?? 85;
-  const feasibilityRating = evaluatedResult?.feasibilityRating ?? "High";
-  const waterRecoveryMld = evaluatedResult?.waterRecoveryMld ?? 32.5;
-  const estimatedCapexCrores = evaluatedResult?.estimatedCapexCrores ?? 64.0;
-  const tenYearReboundM = evaluatedResult?.tenYearReboundM ?? 12.4;
-  const paybackYears = evaluatedResult?.paybackYears ?? 4.6;
+  const readinessScore = evaluatedResult?.readinessScore ?? null;
+  const feasibilityRating = evaluatedResult?.feasibilityRating ?? null;
+  const waterRecoveryMld = evaluatedResult?.waterRecoveryMld ?? null;
+  const estimatedCapexCrores = evaluatedResult?.estimatedCapexCrores ?? null;
+  const tenYearReboundM = evaluatedResult?.tenYearReboundM ?? null;
+  const paybackYears = evaluatedResult?.paybackYears ?? null;
 
-  // Fallback trajectory if evaluatedResult is still resolving
-  const defaultTrajectory = React.useMemo(() => {
-    return Array.from({ length: 10 }, (_, i) => ({
-      year: 2026 + i,
-      compliancePct: Math.min(95, 20 + i * 8),
-      waterSavedMld: Number((32.5 * (0.2 + i * 0.08)).toFixed(1)),
-      reboundM: Number(((32.5 * (0.2 + i * 0.08) * 0.045 * (i + 1))).toFixed(2)),
-    }));
-  }, []);
-
-  const defaultSectoral = [
-    { sector: "Domestic RWH & Tariffs", mld: 12.0, color: "#06b6d4" },
-    { sector: "Industrial Recycling & Effluent", mld: 14.5, color: "#a855f7" },
-    { sector: "Agricultural Micro-Drip", mld: 6.0, color: "#10b981" },
-  ];
-
-  const defaultFinancials = [
-    { year: "Year 1", cumulativeCapex: 35.2, cumulativeSavings: 24.1 },
-    { year: "Year 2", cumulativeCapex: 54.4, cumulativeSavings: 58.2 },
-    { year: "Year 3", cumulativeCapex: 64.0, cumulativeSavings: 112.5 },
-    { year: "Year 4", cumulativeCapex: 64.0, cumulativeSavings: 182.0 },
-    { year: "Year 5", cumulativeCapex: 64.0, cumulativeSavings: 265.4 },
-    { year: "Year 7", cumulativeCapex: 64.0, cumulativeSavings: 452.0 },
-  ];
-
-  const trajectoryData = evaluatedResult?.trajectory && evaluatedResult.trajectory.length > 0 
-    ? evaluatedResult.trajectory 
-    : defaultTrajectory;
-  const sectoralData = evaluatedResult?.sectorBreakdown && evaluatedResult.sectorBreakdown.length > 0 
-    ? evaluatedResult.sectorBreakdown 
-    : defaultSectoral;
-  const financialData = evaluatedResult?.financials && evaluatedResult.financials.length > 0 
-    ? evaluatedResult.financials 
-    : defaultFinancials;
+  const trajectoryData = evaluatedResult?.trajectory ?? [];
+  const sectoralData = evaluatedResult?.sectorBreakdown ?? [];
+  const financialData = evaluatedResult?.financials ?? [];
   const districtImpacts = evaluatedResult?.districtImpacts ?? {};
 
   // Graph 4: NCR Regional Risk Shift (Before vs After Policy)
@@ -213,15 +180,17 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <div className="text-2xl font-extrabold font-mono text-purple-300 flex items-baseline gap-1">
             {isEvaluating ? (
               <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
-            ) : (
+            ) : hasEvaluated && readinessScore !== null ? (
               <>
                 {readinessScore}
                 <span className="text-xs text-slate-500 font-sans font-normal">/100</span>
               </>
+            ) : (
+              <span className="text-slate-500 text-lg font-mono">-- / 100</span>
             )}
           </div>
           <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Feasibility: {feasibilityRating}
+            <CheckCircle2 className="h-3 w-3" /> Feasibility: {hasEvaluated && feasibilityRating ? feasibilityRating : "Pending Deduction"}
           </div>
         </div>
 
@@ -233,14 +202,18 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <div className="text-2xl font-extrabold font-mono text-cyan-300 flex items-baseline gap-1">
             {isEvaluating ? (
               <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-            ) : (
+            ) : hasEvaluated && waterRecoveryMld !== null ? (
               <>
                 +{waterRecoveryMld} <span className="text-xs text-slate-400 font-sans font-normal">MLD</span>
               </>
+            ) : (
+              <span className="text-slate-500 text-lg font-mono">-- MLD</span>
             )}
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            ~{Math.round(waterRecoveryMld * 36.5)} HAM/year recharge
+            {hasEvaluated && waterRecoveryMld !== null
+              ? `~${Math.round(waterRecoveryMld * 36.5)} HAM/year recharge`
+              : "Awaiting policy execution"}
           </div>
         </div>
 
@@ -252,14 +225,18 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <div className="text-2xl font-extrabold font-mono text-amber-300 flex items-baseline gap-1">
             {isEvaluating ? (
               <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
-            ) : (
+            ) : hasEvaluated && estimatedCapexCrores !== null ? (
               <>
                 ₹{estimatedCapexCrores} <span className="text-xs text-slate-400 font-sans font-normal">Cr</span>
               </>
+            ) : (
+              <span className="text-slate-500 text-lg font-mono">₹ -- Cr</span>
             )}
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
-            Break-even: ~{paybackYears} Years payback
+            {hasEvaluated && paybackYears !== null
+              ? `Break-even: ~${paybackYears} Years payback`
+              : "Municipal & CSR allocation"}
           </div>
         </div>
 
@@ -271,14 +248,16 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <div className="text-2xl font-extrabold font-mono text-emerald-400 flex items-baseline gap-1">
             {isEvaluating ? (
               <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
-            ) : (
+            ) : hasEvaluated && tenYearReboundM !== null ? (
               <>
                 +{tenYearReboundM} <span className="text-xs text-slate-400 font-sans font-normal">meters</span>
               </>
+            ) : (
+              <span className="text-slate-500 text-lg font-mono">+ -- m</span>
             )}
           </div>
           <div className="text-[11px] text-emerald-300/80 mt-1">
-            Projected steady recovery
+            {hasEvaluated ? "Projected steady recovery" : "Lithological recovery"}
           </div>
         </div>
       </div>
@@ -300,7 +279,7 @@ export const PolicyEvaluatorPage: React.FC = () => {
           {/* Quick Preset Buttons */}
           <div>
             <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Load Benchmark Templates (Select to Deduce & View Map):
+              Load Benchmark Templates (Select Draft & Click Deduce):
             </label>
             <div className="grid grid-cols-2 gap-1.5">
               {PRESET_POLICIES.map((preset, idx) => {
@@ -312,7 +291,10 @@ export const PolicyEvaluatorPage: React.FC = () => {
                       setSelectedPresetIndex(idx);
                       setDocTitle(preset.title);
                       setDocSynopsis(preset.text);
-                      runEvaluation(preset.title, preset.text);
+                      // Clear previous evaluation so graphs appear after Deduce button is pressed
+                      setEvaluatedResult(null);
+                      setHasEvaluated(false);
+                      setMapImpactMode(false);
                     }}
                     className={`rounded-xl border p-2 text-left transition group ${
                       isSelected
@@ -385,7 +367,9 @@ export const PolicyEvaluatorPage: React.FC = () => {
                 setSelectedPresetIndex(0);
                 setDocTitle(PRESET_POLICIES[0].title);
                 setDocSynopsis(PRESET_POLICIES[0].text);
-                runEvaluation(PRESET_POLICIES[0].title, PRESET_POLICIES[0].text);
+                setEvaluatedResult(null);
+                setHasEvaluated(false);
+                setMapImpactMode(false);
               }}
               className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-400 hover:text-white transition"
               title="Reset to default template"
@@ -443,7 +427,7 @@ export const PolicyEvaluatorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 DETAILED ANALYTICAL GRAPHS */}
+      {/* 4 DETAILED ANALYTICAL GRAPHS - ONLY RENDER AFTER DEDUCE BUTTON IS PRESSED */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -457,130 +441,149 @@ export const PolicyEvaluatorPage: React.FC = () => {
           <span className="text-xs font-mono text-slate-500">CGWB Baseline Calibration • 2026–2035</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Graph 1: 10-Year Water Rebound Trajectory */}
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">
-                  1. 10-Year Cumulative Water Saved vs Water Table Rebound
-                </h4>
-                <p className="text-[10px] text-slate-400">Progression over multi-year policy enforcement horizon</p>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
-                +{trajectoryData[trajectoryData.length - 1]?.reboundM ?? tenYearReboundM}m Net Rebound
-              </span>
+        {!hasEvaluated ? (
+          <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-950/40 p-12 text-center backdrop-blur-md shadow-xl flex flex-col items-center justify-center space-y-3">
+            <div className="h-12 w-12 rounded-2xl bg-cyan-950/50 border border-cyan-800/40 flex items-center justify-center text-cyan-400 shadow-lg">
+              <BarChart3 className="h-6 w-6" />
             </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={trajectoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
-                  <Area type="monotone" name="Cumulative Saved (MLD)" dataKey="waterSavedMld" fill="#06b6d4" fillOpacity={0.2} stroke="#06b6d4" strokeWidth={2} />
-                  <Line type="monotone" name="Aquifer Rebound (+m)" dataKey="reboundM" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
+            <h3 className="text-base font-bold text-slate-200">Analytical Graphs Awaiting Policy Deduction</h3>
+            <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+              Select any benchmark policy template or type your custom synopsis, then click <strong className="text-cyan-300">"Deduce Parameters & Run AI Evaluation"</strong> above to compute multi-year trajectories, financial break-even, and regional risk transitions.
+            </p>
+            <button
+              onClick={() => runEvaluation(docTitle, docSynopsis)}
+              disabled={isEvaluating}
+              className="mt-2 flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 shadow-md shadow-purple-500/20"
+            >
+              <Sparkles className="h-4 w-4" /> Deduce Parameters & View Analytics
+            </button>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Graph 1: 10-Year Water Rebound Trajectory */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200">
+                    1. 10-Year Cumulative Water Saved vs Water Table Rebound
+                  </h4>
+                  <p className="text-[10px] text-slate-400">Progression over multi-year policy enforcement horizon</p>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
+                  +{trajectoryData[trajectoryData.length - 1]?.reboundM ?? tenYearReboundM}m Net Rebound
+                </span>
+              </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={trajectoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 11 }} />
+                    <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
+                    <Area type="monotone" name="Cumulative Saved (MLD)" dataKey="waterSavedMld" fill="#06b6d4" fillOpacity={0.2} stroke="#06b6d4" strokeWidth={2} />
+                    <Line type="monotone" name="Aquifer Rebound (+m)" dataKey="reboundM" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-          {/* Graph 2: Sectoral Water Relief Breakdown */}
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">
-                  2. Sectoral Allocation of Recovered Groundwater (MLD)
-                </h4>
-                <p className="text-[10px] text-slate-400">Contribution from domestic, industrial, and agrarian interventions</p>
+            {/* Graph 2: Sectoral Water Relief Breakdown */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200">
+                    2. Sectoral Allocation of Recovered Groundwater (MLD)
+                  </h4>
+                  <p className="text-[10px] text-slate-400">Contribution from domestic, industrial, and agrarian interventions</p>
+                </div>
+                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
+                  +{waterRecoveryMld} MLD Total
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
-                +{waterRecoveryMld} MLD Total
-              </span>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sectoralData} layout="vertical" margin={{ top: 10, right: 20, left: 40, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} unit=" MLD" />
+                    <YAxis type="category" dataKey="sector" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
+                      formatter={(val: any) => [`${val} MLD`, "Relief Contribution"]}
+                    />
+                    <Bar dataKey="mld" radius={[0, 6, 6, 0]}>
+                      {sectoralData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sectoralData} layout="vertical" margin={{ top: 10, right: 20, left: 40, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} unit=" MLD" />
-                  <YAxis type="category" dataKey="sector" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
-                    formatter={(val: any) => [`${val} MLD`, "Relief Contribution"]}
-                  />
-                  <Bar dataKey="mld" radius={[0, 6, 6, 0]}>
-                    {sectoralData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
-          {/* Graph 3: Financial CAPEX Outlay vs Annual Operational Savings */}
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">
-                  3. Capital Outlay (₹ Cr) vs Cumulative Water Value Returned
-                </h4>
-                <p className="text-[10px] text-slate-400">Financial break-even analysis across implementation timeline</p>
+            {/* Graph 3: Financial CAPEX Outlay vs Annual Operational Savings */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200">
+                    3. Capital Outlay (₹ Cr) vs Cumulative Water Value Returned
+                  </h4>
+                  <p className="text-[10px] text-slate-400">Financial break-even analysis across implementation timeline</p>
+                </div>
+                <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">
+                  Break-Even: ~{paybackYears} Years
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">
-                Break-Even: ~{paybackYears} Years
-              </span>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={financialData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 10 }} />
+                    <YAxis stroke="#64748b" tick={{ fontSize: 11 }} unit=" Cr" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
+                    <Bar name="Cumulative CAPEX (₹ Cr)" dataKey="cumulativeCapex" fill="#f59e0b" radius={[4, 4, 0, 0]} opacity={0.8} />
+                    <Line type="monotone" name="Cumulative Water Value (₹ Cr)" dataKey="cumulativeSavings" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={financialData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="year" stroke="#64748b" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="#64748b" tick={{ fontSize: 11 }} unit=" Cr" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
-                  <Bar name="Cumulative CAPEX (₹ Cr)" dataKey="cumulativeCapex" fill="#f59e0b" radius={[4, 4, 0, 0]} opacity={0.8} />
-                  <Line type="monotone" name="Cumulative Water Value (₹ Cr)" dataKey="cumulativeSavings" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
-          {/* Graph 4: Regional Risk Shift (Before vs After) */}
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">
-                  4. Regional NCR Risk Transition (Before vs After Policy)
-                </h4>
-                <p className="text-[10px] text-slate-400">Total districts upgrading across CGWB extraction stress categories</p>
+            {/* Graph 4: Regional Risk Shift (Before vs After) */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-xl">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200">
+                    4. Regional NCR Risk Transition (Before vs After Policy)
+                  </h4>
+                  <p className="text-[10px] text-slate-400">Total districts upgrading across CGWB extraction stress categories</p>
+                </div>
+                <span className="text-[10px] font-mono text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/50">
+                  15 NCR Districts
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/50">
-                15 NCR Districts
-              </span>
-            </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={regionalShiftData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="category" stroke="#64748b" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
-                  <Bar name="Baseline Status (Districts)" dataKey="baseline" fill="#64748b" radius={[4, 4, 0, 0]} />
-                  <Bar name="Post-Policy Status (Districts)" dataKey="postPolicy" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={regionalShiftData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="category" stroke="#64748b" tick={{ fontSize: 10 }} />
+                    <YAxis stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#090e24", borderColor: "#1e293b", borderRadius: "0.75rem", fontSize: "11px", color: "#f8fafc" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
+                    <Bar name="Baseline Status (Districts)" dataKey="baseline" fill="#64748b" radius={[4, 4, 0, 0]} />
+                    <Bar name="Post-Policy Status (Districts)" dataKey="postPolicy" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* AI Hydrogeological Review Dossier & CGWA Checklist */}

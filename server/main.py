@@ -295,23 +295,39 @@ def evaluate_policy(payload: PolicyEvaluationPayload):
         dist_name_str = meta["district_name"].lower()
         dist_aquifer = meta["aquifer_type"]
 
-        # Policy spatial affinity factor
-        affinity = 0.5
-        if is_recharge and any(k in dist_name_str for k in ["north", "central", "east", "noida", "ghaziabad"]):
-            affinity = 1.35  # Floodplain districts benefit heavily
-        elif is_moratorium and any(k in dist_name_str for k in ["gurugram", "gurgaon", "south", "faridabad", "noida"]):
-            affinity = 1.45  # Commercial hubs with over-extraction
-        elif is_agri and any(k in dist_name_str for k in ["north west", "south west", "faridabad", "ghaziabad"]):
-            affinity = 1.50  # Agri peri-urban fringe districts
-        elif is_rwh_tariff and any(k in dist_name_str for k in ["south", "west", "new delhi", "central", "gurugram"]):
-            affinity = 1.25  # Dense residential/commercial rooftop zones
+        # Distinct spatial policy affinity factor
+        affinity = 0.25
+        if is_recharge:
+            # Yamuna corridor and floodplain paleochannel districts recharge significantly
+            if any(k in dist_name_str for k in ["north", "central", "east", "noida", "ghaziabad", "shahdara"]):
+                affinity = 1.65
+            elif "south" in dist_name_str:
+                affinity = 0.4
+        elif is_moratorium:
+            # Over-exploited commercial and real estate IT hubs receive immense relief from ban
+            if any(k in dist_name_str for k in ["gurugram", "gurgaon", "south", "faridabad", "noida"]):
+                affinity = 1.75
+            elif any(k in dist_name_str for k in ["north", "north east"]):
+                affinity = 0.35
+        elif is_agri:
+            # Fringe agrarian districts with extensive tubewell irrigation benefit dramatically
+            if any(k in dist_name_str for k in ["north west", "south west", "faridabad", "ghaziabad"]):
+                affinity = 1.85
+            elif any(k in dist_name_str for k in ["new delhi", "central", "shahdara"]):
+                affinity = 0.20
+        elif is_rwh_tariff:
+            # High-density urban and residential zones where rooftop capture is largest
+            if any(k in dist_name_str for k in ["south", "west", "new delhi", "central", "gurugram"]):
+                affinity = 1.55
+            elif "faridabad" in dist_name_str:
+                affinity = 0.45
 
-        extract_reduction = min(48.0, round((recovery_mld * 0.45 * affinity), 1))
-        simulated_extract = max(42.0, base_extract_val - extract_reduction)
+        extract_reduction = min(55.0, round((recovery_mld * 0.52 * affinity), 1))
+        simulated_extract = max(38.0, base_extract_val - extract_reduction)
 
-        # Categorize new risk level
+        # Categorize new risk level strictly based on CGWB standards
         new_risk = "Safe" if simulated_extract <= 70 else "Semi-Critical" if simulated_extract <= 90 else "Critical" if simulated_extract <= 100 else "Over-Exploited"
-        dist_rebound = round(extract_reduction * 0.08 * (0.6 if "Quartzite" in dist_aquifer else 1.1), 2)
+        dist_rebound = round(extract_reduction * 0.095 * (0.6 if "Quartzite" in dist_aquifer else 1.15), 2)
 
         district_impacts[dist_key] = {
             "baselineExtractionPct": base_extract_val,
