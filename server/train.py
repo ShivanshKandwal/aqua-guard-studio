@@ -114,10 +114,10 @@ X_test_t = torch.tensor(X_test_scaled[:, None, :], dtype=torch.float32)
 y_test_t = torch.tensor(y_test, dtype=torch.float32)
 
 dataset = TensorDataset(X_train_t, y_train_t)
-loader = DataLoader(dataset, batch_size=16, shuffle=True)
+loader = DataLoader(dataset, batch_size=64, shuffle=True)
 
 lstm_net.train()
-for epoch in range(120):
+for epoch in range(35):
     for batch_x, batch_y in loader:
         optimizer.zero_grad()
         preds = lstm_net(batch_x)

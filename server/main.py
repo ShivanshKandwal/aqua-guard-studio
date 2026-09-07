@@ -55,9 +55,14 @@ lstm_model = GroundwaterLSTM(input_dim=7, hidden_dim=32, num_layers=2)
 lstm_model.load_state_dict(torch.load(BASE_DIR / "models" / "lstm_groundwater.pt", map_location="cpu"))
 lstm_model.eval()
 
-# Load District Baseline Metadata
+# Load District Baseline Metadata (latest 2024 records averaged or deduplicated across observation stations)
 df_meta = pd.read_csv(BASE_DIR / "data" / "delhi_ncr_cgwb_2015_2024.csv")
-latest_meta = df_meta[df_meta["year"] == 2024].set_index("district_id").to_dict(orient="index")
+latest_meta = (
+    df_meta[df_meta["year"] == 2024]
+    .drop_duplicates(subset=["district_id"], keep="last")
+    .set_index("district_id")
+    .to_dict(orient="index")
+)
 
 aquifer_map = {"Alluvial": 0, "Alluvial-Quartzite": 1, "Quartzite": 2}
 
@@ -151,8 +156,10 @@ def predict_groundwater(payload: SimulationPayload):
         depth_y = max(2.0, round(predicted_depth + (annual_rate * y), 2))
         extract_y = round(simulated_extract + (y * 0.4), 1)
         
-        recharge_ham = max(100, int(d_info["recharge_potential_ham"] * (1 + payload.rainfall_anomaly_pct / 100 * 0.7) + (payload.rwh_adoption_pct * 12)))
-        draft_ham = int(d_info["annual_groundwater_draft_ham"] * (extract_y / d_info["extraction_stage_pct"]))
+        base_recharge = float(d_info.get("recharge_potential_ham", 1200))
+        base_draft = float(d_info.get("annual_groundwater_draft_ham", 1500))
+        recharge_ham = max(100, int(base_recharge * (1 + payload.rainfall_anomaly_pct / 100 * 0.7) + (payload.rwh_adoption_pct * 12)))
+        draft_ham = int(base_draft * (extract_y / max(1.0, float(d_info.get("extraction_stage_pct", 100.0)))))
         deficit_ham = draft_ham - recharge_ham
 
         energy_surge = max(0.0, round(((depth_y - baseline_depth) / baseline_depth) * 100, 1))
@@ -511,7 +518,8 @@ RESPONSE GUIDELINES:
         ]
 
     elif any(k in q for k in ["policy", "action", "mandate", "save", "intervention", "noc", "cgwa", "rule"]):
-        savings_mld = round((d_info["annual_groundwater_draft_ham"] * (payload.rwh_adoption_pct * 0.003 + payload.industrial_recycling_pct * 0.002)) * 10 / 365, 2)
+        base_draft_val = float(d_info.get("annual_groundwater_draft_ham", 1500))
+        savings_mld = round((base_draft_val * (payload.rwh_adoption_pct * 0.003 + payload.industrial_recycling_pct * 0.002)) * 10 / 365, 2)
         reply_text = f"### ⚖️ CGWA Statutory Directives & Interventions for **{d_name}** ({curr_risk})\n\n" \
                      f"Under the **Central Ground Water Authority (CGWA) Guidelines 2020/2024**, {d_name} is categorized as **{curr_risk}**.\n\n" \
                      f"**Immediate Compliance Mandates:**\n" \

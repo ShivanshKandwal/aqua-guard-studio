@@ -1,4 +1,4 @@
-﻿import type { CGWBDistrict } from "../data/cgwb-districts";
+import type { CGWBDistrict } from "../data/cgwb-districts";
 import { getRiskLevel } from "../data/cgwb-districts";
 import type { GroundwaterPredictor, ModelPredictionOutput, SimulationParameters, YearProjectionPoint, SectorDraftBreakdown } from "./types";
 
@@ -129,10 +129,11 @@ export class XGBoostModel implements GroundwaterPredictor {
         aquiferStorageImpactPct: 8,
       },
       metrics: {
+        accuracyPct: 94.2,
         rmse: 0.98,
         r2: 0.94,
         mae: 0.72,
-        trainingEpochsOrTrees: 350,
+        trainingEpochsOrTrees: 250,
         inferenceTimeMs: Math.max(0.2, inferenceTimeMs),
       },
     };

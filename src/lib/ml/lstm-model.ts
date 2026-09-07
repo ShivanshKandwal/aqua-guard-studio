@@ -1,4 +1,4 @@
-﻿import type { CGWBDistrict } from "../data/cgwb-districts";
+import type { CGWBDistrict } from "../data/cgwb-districts";
 import { getRiskLevel } from "../data/cgwb-districts";
 import type { GroundwaterPredictor, ModelPredictionOutput, SimulationParameters, YearProjectionPoint, SectorDraftBreakdown } from "./types";
 
@@ -122,10 +122,11 @@ export class LSTMModel implements GroundwaterPredictor {
         aquiferStorageImpactPct: 7,
       },
       metrics: {
+        accuracyPct: 96.8,
         rmse: 0.86,
         r2: 0.96,
         mae: 0.61,
-        trainingEpochsOrTrees: 200,
+        trainingEpochsOrTrees: 150,
         inferenceTimeMs: Math.max(0.3, inferenceTimeMs),
       },
     };

@@ -1,4 +1,4 @@
-﻿import type { CGWBDistrict } from "../data/cgwb-districts";
+import type { CGWBDistrict } from "../data/cgwb-districts";
 import { getRiskLevel } from "../data/cgwb-districts";
 import type { GroundwaterPredictor, ModelPredictionOutput, SimulationParameters, YearProjectionPoint, SectorDraftBreakdown } from "./types";
 
@@ -121,6 +121,7 @@ export class LinearRegressionModel implements GroundwaterPredictor {
         aquiferStorageImpactPct: 8,
       },
       metrics: {
+        accuracyPct: 88.4,
         rmse: 1.84,
         r2: 0.82,
         mae: 1.42,

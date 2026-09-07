@@ -1,4 +1,4 @@
-﻿import type { CGWBDistrict, RiskLevel } from "../data/cgwb-districts";
+import type { CGWBDistrict, RiskLevel } from "../data/cgwb-districts";
 
 export interface SimulationParameters {
   rainfallAnomalyPct: number;    // -50% to +50%
@@ -53,6 +53,7 @@ export interface ModelPredictionOutput {
     aquiferStorageImpactPct: number;
   };
   metrics: {
+    accuracyPct: number;
     rmse: number;
     r2: number;
     mae: number;
