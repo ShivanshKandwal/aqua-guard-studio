@@ -418,7 +418,7 @@ RESPONSE GUIDELINES:
                      f"| **Linear Regression** | `0.901` | `1.84m` | Near-term gradient (3–4 yrs) |\n" \
                      f"| **XGBoost Trees** | `0.869` | `0.98m` | Extreme extraction shocks (5–8 yrs) |\n" \
                      f"| **PyTorch LSTM** | `0.936` | `0.86m` | Multi-season lag & hysteresis (9–15 yrs) |\n\n" \
-                     f"🔬 *Feature Importance:* Draft Extraction ($\sim 44\%$) > Rainfall Anomaly ($\sim 34\%$) > RWH Adoption ($\sim 14\%$) > Aquifer Strata ($\sim 8\%$).\n\n" \
+                     f"🔬 *Feature Importance:* Draft Extraction (~44%) > Rainfall Anomaly (~34%) > RWH Adoption (~14%) > Aquifer Strata (~8%).\n\n" \
                      f"Currently projecting a **{payload.horizon_years}-year** forward horizon (2025–{2025 + payload.horizon_years})."
         suggested_actions = [
             "Switch to LSTM model",
