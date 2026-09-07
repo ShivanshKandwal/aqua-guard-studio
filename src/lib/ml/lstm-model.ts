@@ -122,11 +122,11 @@ export class LSTMModel implements GroundwaterPredictor {
         aquiferStorageImpactPct: 7,
       },
       metrics: {
-        accuracyPct: 96.8,
-        rmse: 0.86,
-        r2: 0.96,
-        mae: 0.61,
-        trainingEpochsOrTrees: 150,
+        accuracyPct: 92.9,
+        rmse: 5.29,
+        r2: 0.929,
+        mae: 4.07,
+        trainingEpochsOrTrees: 35,
         inferenceTimeMs: Math.max(0.3, inferenceTimeMs),
       },
     };

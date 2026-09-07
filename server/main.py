@@ -119,15 +119,15 @@ def predict_groundwater(payload: SimulationPayload):
     # Model inference
     if payload.model_id == "linreg-v1":
         predicted_depth = float(linreg_model.predict(scaled_features)[0])
-        rmse, r2, mae = 1.84, 0.82, 1.42
+        rmse, r2, mae = 7.70, 0.849, 5.81
     elif payload.model_id == "lstm-v1":
         with torch.no_grad():
             feat_t = torch.tensor(scaled_features[:, None, :], dtype=torch.float32)
             predicted_depth = float(lstm_model(feat_t).item())
-        rmse, r2, mae = 0.86, 0.96, 0.61
+        rmse, r2, mae = 5.29, 0.929, 4.07
     else:  # xgboost-v1 default
         predicted_depth = float(xgb_model.predict(scaled_features)[0])
-        rmse, r2, mae = 0.98, 0.94, 0.72
+        rmse, r2, mae = 7.32, 0.864, 5.10
 
     predicted_depth = max(2.5, round(predicted_depth, 2))
     delta_depth = round(predicted_depth - baseline_depth, 2)
