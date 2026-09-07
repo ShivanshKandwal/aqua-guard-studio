@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 import joblib
 import numpy as np
 import pandas as pd
@@ -363,7 +366,7 @@ Provide a concise, publication-grade AI policy passage (150-200 words max) with 
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"POLICY TITLE: {payload.policy_title}\n\nPOLICY SYNOPSIS:\n{payload.policy_text}"}
                 ],
-                model="openai/gpt-oss-20b",
+                model="qwen/qwen3.8-27b",
                 temperature=0.3,
                 max_tokens=600,
             )
@@ -463,7 +466,7 @@ RESPONSE GUIDELINES:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": payload.prompt}
                 ],
-                model="openai/gpt-oss-20b",
+                model="qwen/qwen3.8-27b",
                 temperature=0.4,
                 max_tokens=1500,
             )
