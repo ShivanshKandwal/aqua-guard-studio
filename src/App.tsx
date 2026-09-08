@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PageShell } from "./components/layout/PageShell";
 import { StudioPage } from "./pages/StudioPage";
 import { AssistantPage } from "./pages/AssistantPage";
@@ -9,7 +9,7 @@ import { ModelsPage } from "./pages/ModelsPage";
 
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <PageShell>
         <Routes>
           <Route path="/" element={<StudioPage />} />
@@ -20,6 +20,6 @@ export const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </PageShell>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
