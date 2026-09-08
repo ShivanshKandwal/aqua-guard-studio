@@ -12,6 +12,7 @@ export const MetricsControlDeck: React.FC = () => {
     setActiveModelId,
     isServerSynced,
     isEvaluating,
+    activeServerLabel,
     syncWithBackend,
   } = useStudioStore();
 
@@ -275,7 +276,7 @@ export const MetricsControlDeck: React.FC = () => {
           <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 font-mono">
             <span className="flex items-center gap-1.5">
               <span className={`h-2 w-2 rounded-full ${isServerSynced ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-              {isServerSynced ? "Connected to FastAPI: 127.0.0.1:8000" : "Running in local browser fallback"}
+              {isServerSynced ? activeServerLabel : "Running in analytical engine fallback"}
             </span>
             <span className="text-cyan-400 font-semibold">
               {activeModelId.toUpperCase()}

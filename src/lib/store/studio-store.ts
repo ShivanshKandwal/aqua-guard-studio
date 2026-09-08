@@ -24,6 +24,7 @@ interface StudioStore {
   // Server Sync Status
   isServerSynced: boolean;
   isEvaluating: boolean;
+  activeServerLabel: string;
   serverPrediction: ModelPredictionOutput | null;
   syncWithBackend: () => Promise<void>;
 
@@ -36,38 +37,34 @@ interface StudioStore {
 const DEFAULT_PARAMS: SimulationParameters = {
   rainfallAnomalyPct: 0,
   extractionDeltaPct: 0,
-  rwhAdoptionPct: 35,
-  industrialRecyclingPct: 40,
-  dripIrrigationShiftPct: 25,
-  targetYearHorizon: 10,
+  rwhAdoptionPct: 20,
+  industrialRecyclingPct: 15,
+  dripIrrigationShiftPct: 10,
+  targetYearHorizon: 5,
 };
 
 export const useStudioStore = create<StudioStore>((set, get) => ({
   districts: CGWB_DISTRICTS,
-  selectedDistrictId: "south-west-delhi",
-  setSelectedDistrictId: (id) => {
-    set({ selectedDistrictId: id, serverPrediction: null });
-  },
+  selectedDistrictId: CGWB_DISTRICTS[0].id,
+  setSelectedDistrictId: (id) => set({ selectedDistrictId: id, serverPrediction: null }),
 
   activeModelId: "xgboost-v1",
-  setActiveModelId: (id) => {
-    set({ activeModelId: id, serverPrediction: null });
-  },
+  setActiveModelId: (id) => set({ activeModelId: id, serverPrediction: null }),
+
+  params: { ...DEFAULT_PARAMS },
 
   isServerSynced: false,
   isEvaluating: false,
+  activeServerLabel: "FastAPI ML (Detecting...)",
   serverPrediction: null,
 
-  params: { ...DEFAULT_PARAMS },
-  setParam: (key, value) => {
+  setParam: (key, value) =>
     set((state) => ({
       params: { ...state.params, [key]: value },
-      serverPrediction: null, // Invalidate server prediction when parameters change until button is pressed
-    }));
-  },
-  resetParams: () => {
-    set({ params: { ...DEFAULT_PARAMS }, serverPrediction: null });
-  },
+      serverPrediction: null,
+    })),
+
+  resetParams: () => set({ params: { ...DEFAULT_PARAMS }, serverPrediction: null }),
 
   applyPreset: (preset) => {
     switch (preset) {
@@ -75,11 +72,11 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
         set({
           params: {
             rainfallAnomalyPct: -35,
-            extractionDeltaPct: 25,
-            rwhAdoptionPct: 15,
-            industrialRecyclingPct: 20,
-            dripIrrigationShiftPct: 10,
-            targetYearHorizon: 10,
+            extractionDeltaPct: 20,
+            rwhAdoptionPct: 10,
+            industrialRecyclingPct: 5,
+            dripIrrigationShiftPct: 5,
+            targetYearHorizon: 5,
           },
           serverPrediction: null,
         });
@@ -87,11 +84,11 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       case "conservation":
         set({
           params: {
-            rainfallAnomalyPct: 5,
-            extractionDeltaPct: -30,
-            rwhAdoptionPct: 85,
-            industrialRecyclingPct: 80,
-            dripIrrigationShiftPct: 75,
+            rainfallAnomalyPct: 0,
+            extractionDeltaPct: -25,
+            rwhAdoptionPct: 60,
+            industrialRecyclingPct: 50,
+            dripIrrigationShiftPct: 40,
             targetYearHorizon: 10,
           },
           serverPrediction: null,
@@ -102,10 +99,10 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
           params: {
             rainfallAnomalyPct: 40,
             extractionDeltaPct: -10,
-            rwhAdoptionPct: 60,
-            industrialRecyclingPct: 50,
-            dripIrrigationShiftPct: 40,
-            targetYearHorizon: 10,
+            rwhAdoptionPct: 45,
+            industrialRecyclingPct: 20,
+            dripIrrigationShiftPct: 15,
+            targetYearHorizon: 5,
           },
           serverPrediction: null,
         });
@@ -124,7 +121,12 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
 
     const remotePred = await cgwbApiAdapter.fetchRemotePrediction(district, params, activeModelId);
     if (remotePred) {
-      set({ serverPrediction: remotePred, isServerSynced: true, isEvaluating: false });
+      set({
+        serverPrediction: remotePred,
+        isServerSynced: true,
+        activeServerLabel: cgwbApiAdapter.getActiveEndpointLabel(),
+        isEvaluating: false,
+      });
     } else {
       set({ isServerSynced: false, isEvaluating: false });
     }
@@ -146,19 +148,14 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   getDistrictPrediction: (districtId: string) => {
-    const { districts, activeModelId, params, selectedDistrictId, serverPrediction } = get();
-    if (districtId === selectedDistrictId && serverPrediction) {
-      return serverPrediction;
-    }
+    const { districts, activeModelId, params } = get();
     const district = districts.find((d) => d.id === districtId) || districts[0];
     const model = getModelById(activeModelId);
     return model.predict(district, params);
   },
 
   getPolicyEvaluation: () => {
-    const { getCurrentDistrict, getPrediction, params } = get();
-    const district = getCurrentDistrict();
-    const prediction = getPrediction();
-    return evaluateDynamicPolicies(district, params, prediction.predictedExtractionPct, prediction.riskLevel);
+    const { getCurrentDistrict, params } = get();
+    return evaluateDynamicPolicies(getCurrentDistrict(), params);
   },
 }));
