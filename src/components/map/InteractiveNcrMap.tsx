@@ -20,6 +20,8 @@ interface InteractiveNcrMapProps {
   >;
 }
 
+import ncrGeoJsonFallback from "../../data/ncr-districts.json";
+
 export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
   policyImpactMode = false,
   policyReboundM = 0,
@@ -30,8 +32,9 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const geoJsonLayerRef = useRef<any>(null);
-  const [geoJsonData, setGeoJsonData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Default to bundled GeoJSON immediately so there's zero network delay or file:// protocol failure
+  const [geoJsonData, setGeoJsonData] = useState<any>(ncrGeoJsonFallback);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Map district name in GeoJSON to our district ID
   const districtNameMapping: Record<string, string> = {
@@ -63,19 +66,26 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
     "Ghaziabad": "ghaziabad",
   };
 
-  // 1. Fetch GeoJSON
+  // 1. Fetch GeoJSON (with bundled fallback already present)
   useEffect(() => {
-    fetch("/data/ncr-districts.geojson")
-      .then((res) => res.json())
-      .then((data) => {
-        setGeoJsonData(data);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load NCR GeoJSON:", err);
-        setIsLoading(false);
-      });
-  }, []);
+    if (!geoJsonData) {
+      const geojsonUrl = import.meta.env.BASE_URL
+        ? `${import.meta.env.BASE_URL}data/ncr-districts.geojson`
+        : "./data/ncr-districts.geojson";
+
+      fetch(geojsonUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          setGeoJsonData(data);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.warn("Using bundled fallback GeoJSON:", err);
+          setGeoJsonData(ncrGeoJsonFallback);
+          setIsLoading(false);
+        });
+    }
+  }, [geoJsonData]);
 
   // 2. Initialize Leaflet Map
   useEffect(() => {
