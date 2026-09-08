@@ -5,7 +5,7 @@ import { useStudioStore } from "../../lib/store/studio-store";
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
-  const { districts, selectedDistrictId, setSelectedDistrictId, activeModelId, setActiveModelId } = useStudioStore();
+  const { districts, selectedDistrictId, setSelectedDistrictId, activeModelId, setActiveModelId, isServerSynced, activeServerLabel } = useStudioStore();
 
   const navLinks = [
     { path: "/", label: "Studio & Map", icon: Compass },
