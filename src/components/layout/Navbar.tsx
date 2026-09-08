@@ -89,9 +89,13 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Live Server Indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/60 px-2.5 py-1 text-[11px] font-mono text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>FastAPI ML: Online</span>
+          <div className={`hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-mono border ${
+            isServerSynced
+              ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-400"
+              : "bg-amber-950/40 border-amber-800/60 text-amber-300"
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${isServerSynced ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+            <span>{isServerSynced ? activeServerLabel : "Backend: Offline"}</span>
           </div>
         </div>
       </div>
