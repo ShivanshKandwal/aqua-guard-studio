@@ -1,10 +1,31 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { spawn } = require("child_process");
+const { spawn, execSync } = require("child_process");
 
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 let pythonProcess = null;
+
+function findPythonCommand() {
+  // Common paths on Windows if "python" is not directly in GUI process PATH
+  const candidates = [
+    "python",
+    "py",
+    "python3",
+    path.join(process.env.USERPROFILE || "", "miniconda3", "python.exe"),
+    path.join(process.env.USERPROFILE || "", "anaconda3", "python.exe"),
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Python", "Python313", "python.exe"),
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Python", "Python312", "python.exe"),
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Python", "Python311", "python.exe"),
+  ];
+
+  for (const cmd of candidates) {
+    if (cmd.includes(path.sep) && fs.existsSync(cmd)) {
+      return cmd;
+    }
+  }
+  return "python";
+}
 
 function resolveServerScript() {
   // 1. In development, point to repo server/main.py
@@ -30,10 +51,11 @@ function resolveServerScript() {
 
 function startPythonBackend() {
   const { script: pythonScript, cwd: workingDir } = resolveServerScript();
+  const pythonBinary = findPythonCommand();
 
-  console.log(`[AquaGuard Electron] Launching Python backend: python "${pythonScript}" in "${workingDir}"`);
+  console.log(`[AquaGuard Electron] Launching Python backend: "${pythonBinary}" "${pythonScript}" in "${workingDir}"`);
   try {
-    pythonProcess = spawn("python", [pythonScript], {
+    pythonProcess = spawn(pythonBinary, [pythonScript], {
       cwd: workingDir,
       stdio: "pipe",
       env: { ...process.env, PYTHONUNBUFFERED: "1" },
@@ -65,11 +87,11 @@ function startPythonBackend() {
 }
 
 function stopPythonBackend() {
-  if (pythonProcess) {
-    console.log("[AquaGuard Electron] Shutting down Python backend process...");
+  if (pythonProcess && pythonProcess.pid) {
+    console.log("[AquaGuard Electron] Shutting down Python backend process PID:", pythonProcess.pid);
     try {
       if (process.platform === "win32") {
-        spawn("taskkill", ["/pid", pythonProcess.pid.toString(), "/f", "/t"]);
+        execSync(`taskkill /pid ${pythonProcess.pid} /f /t`, { stdio: "ignore" });
       } else {
         pythonProcess.kill("SIGTERM");
       }
@@ -126,6 +148,10 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+});
+
+app.on("before-quit", () => {
+  stopPythonBackend();
 });
 
 app.on("will-quit", () => {
