@@ -1,18 +1,40 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
 
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 let pythonProcess = null;
 
-function startPythonBackend() {
-  const projectRoot = path.join(__dirname, "..");
-  const pythonScript = path.join(projectRoot, "server", "main.py");
+function resolveServerScript() {
+  // 1. In development, point to repo server/main.py
+  const devPath = path.join(__dirname, "..", "server", "main.py");
+  if (fs.existsSync(devPath)) {
+    return { script: devPath, cwd: path.join(__dirname, "..") };
+  }
 
-  console.log(`[AquaGuard Electron] Launching Python backend: python ${pythonScript}`);
+  // 2. In packaged mode, extraResources places server in resources/server/main.py
+  const resourcePath = path.join(process.resourcesPath, "server", "main.py");
+  if (fs.existsSync(resourcePath)) {
+    return { script: resourcePath, cwd: path.join(process.resourcesPath, "server") };
+  }
+
+  // 3. Fallback relative to app path
+  const appPath = path.join(app.getAppPath(), "server", "main.py");
+  if (fs.existsSync(appPath)) {
+    return { script: appPath, cwd: path.join(app.getAppPath(), "server") };
+  }
+
+  return { script: devPath, cwd: path.join(__dirname, "..") };
+}
+
+function startPythonBackend() {
+  const { script: pythonScript, cwd: workingDir } = resolveServerScript();
+
+  console.log(`[AquaGuard Electron] Launching Python backend: python "${pythonScript}" in "${workingDir}"`);
   try {
     pythonProcess = spawn("python", [pythonScript], {
-      cwd: projectRoot,
+      cwd: workingDir,
       stdio: "pipe",
       env: { ...process.env, PYTHONUNBUFFERED: "1" },
     });

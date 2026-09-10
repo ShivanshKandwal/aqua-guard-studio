@@ -39,20 +39,56 @@ class CGWBApiAdapter {
   private isServerOnline: boolean = true;
   private activeEndpointLabel: string = "Connecting...";
 
+  /**
+   * Returns true if running inside desktop app (Electron) or local file/desktop environment.
+   */
+  public isDesktopApp(): boolean {
+    if (typeof window === "undefined") return false;
+    return !!(
+      (window as any).electronAPI?.isElectron ||
+      window.location.protocol === "file:" ||
+      window.navigator.userAgent.toLowerCase().includes("electron")
+    );
+  }
+
+  /**
+   * Strict Environment Base URL:
+   * - In Desktop App (Electron): STRICTLY local backend (http://127.0.0.1:8000)
+   * - In Web Hosted (Render / Cloud / Web): Cloud backend (https://aquaguard-backend-3cu8.onrender.com)
+   */
   public getApiBaseUrl(): string {
     if (import.meta.env.VITE_API_URL) {
       return import.meta.env.VITE_API_URL;
     }
+    if (this.isDesktopApp()) {
+      return "http://127.0.0.1:8000";
+    }
     if (typeof window !== "undefined") {
-      if ((window as any).electronAPI?.isElectron || window.location.protocol === "file:") {
-        return "http://127.0.0.1:8000";
-      }
       const host = window.location.hostname;
       if (host === "localhost" || host === "127.0.0.1") {
         return "http://127.0.0.1:8000";
       }
     }
     return "https://aquaguard-backend-3cu8.onrender.com";
+  }
+
+  /**
+   * Candidate URLs strictly partitioned:
+   * - Electron app: Only local server ("http://127.0.0.1:8000")
+   * - Web deployment: Only Render cloud ("https://aquaguard-backend-3cu8.onrender.com")
+   * - Local browser (localhost): Local first ("http://127.0.0.1:8000")
+   */
+  private getTargetEndpoints(): string[] {
+    if (this.isDesktopApp()) {
+      return ["http://127.0.0.1:8000"];
+    }
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") {
+        return ["http://127.0.0.1:8000"];
+      }
+    }
+    return ["https://aquaguard-backend-3cu8.onrender.com"];
   }
 
   public getActiveEndpointLabel(): string {
@@ -78,7 +114,7 @@ class CGWBApiAdapter {
   public async checkHealth(): Promise<boolean> {
     try {
       const baseUrl = this.getApiBaseUrl();
-      const res = await this.fetchWithTimeout(`${baseUrl}/`, { method: "GET" }, 1500);
+      const res = await this.fetchWithTimeout(`${baseUrl}/`, { method: "GET" }, 2500);
       this.isServerOnline = res.ok;
       return res.ok;
     } catch (e) {
@@ -92,10 +128,7 @@ class CGWBApiAdapter {
     params: SimulationParameters,
     modelId: string
   ): Promise<ModelPredictionOutput | null> {
-    const candidateUrls = [
-      "http://127.0.0.1:8000",
-      "https://aquaguard-backend-3cu8.onrender.com",
-    ];
+    const endpoints = this.getTargetEndpoints();
 
     const payload = {
       district_id: district.id,
@@ -108,11 +141,10 @@ class CGWBApiAdapter {
       horizon_years: params.targetYearHorizon,
     };
 
-    for (const baseUrl of candidateUrls) {
+    for (const baseUrl of endpoints) {
       try {
-        console.log(`[AquaGuard] Attempting ML prediction at: ${baseUrl}/api/predict`);
-        // Use 2000ms timeout for local 127.0.0.1, 10000ms for cloud Render
-        const timeout = baseUrl.includes("127.0.0.1") ? 2000 : 12000;
+        console.log(`[AquaGuard] Fetching prediction from: ${baseUrl}/api/predict`);
+        const timeout = baseUrl.includes("127.0.0.1") ? 5000 : 25000;
         const response = await this.fetchWithTimeout(
           `${baseUrl}/api/predict`,
           {
@@ -194,7 +226,7 @@ class CGWBApiAdapter {
           },
         };
       } catch (err) {
-        console.warn(`[AquaGuard] Connection attempt to ${baseUrl} failed:`, err);
+        console.warn(`[AquaGuard] Request to ${baseUrl} failed:`, err);
       }
     }
     return null;
@@ -206,10 +238,7 @@ class CGWBApiAdapter {
     params: SimulationParameters,
     prediction: ModelPredictionOutput
   ): Promise<{ text: string; suggested_actions: string[]; timestamp: string } | null> {
-    const candidateUrls = [
-      "http://127.0.0.1:8000",
-      "https://aquaguard-backend-3cu8.onrender.com",
-    ];
+    const endpoints = this.getTargetEndpoints();
 
     const payload = {
       prompt,
@@ -226,9 +255,9 @@ class CGWBApiAdapter {
       risk_level: prediction.riskLevel,
     };
 
-    for (const baseUrl of candidateUrls) {
+    for (const baseUrl of endpoints) {
       try {
-        const timeout = baseUrl.includes("127.0.0.1") ? 2500 : 15000;
+        const timeout = baseUrl.includes("127.0.0.1") ? 5000 : 25000;
         const response = await this.fetchWithTimeout(
           `${baseUrl}/api/assistant`,
           {
@@ -246,7 +275,7 @@ class CGWBApiAdapter {
           return await response.json();
         }
       } catch (err) {
-        // Continue to cloud fallback
+        console.warn(`[AquaGuard Assistant] Request to ${baseUrl} failed:`, err);
       }
     }
     return null;
@@ -257,14 +286,11 @@ class CGWBApiAdapter {
     policyText: string,
     districtId: string
   ): Promise<ComprehensivePolicyResult | null> {
-    const candidateUrls = [
-      "http://127.0.0.1:8000",
-      "https://aquaguard-backend-3cu8.onrender.com",
-    ];
+    const endpoints = this.getTargetEndpoints();
 
-    for (const baseUrl of candidateUrls) {
+    for (const baseUrl of endpoints) {
       try {
-        const timeout = baseUrl.includes("127.0.0.1") ? 2500 : 15000;
+        const timeout = baseUrl.includes("127.0.0.1") ? 5000 : 25000;
         const response = await this.fetchWithTimeout(
           `${baseUrl}/api/evaluate-policy`,
           {
@@ -286,7 +312,7 @@ class CGWBApiAdapter {
           return await response.json();
         }
       } catch (err) {
-        // Try cloud candidate
+        console.warn(`[AquaGuard Policy] Request to ${baseUrl} failed:`, err);
       }
     }
 
@@ -404,7 +430,7 @@ class CGWBApiAdapter {
       financials,
       districtImpacts,
       aiPassage: `Policy intervention '${policyTitle}' projected to remediate ${recoveryMld.toFixed(1)} MLD across ${targetDistrict.name}. Aquifer levels are estimated to rebound by ${trajectory[trajectory.length - 1].reboundM}m over a 10-year horizon, easing stress from ${targetDistrict.stageOfExtractionPct}% to ${districtImpacts[targetDistrict.id].simulatedExtractionPct}%.`,
-      modelUsed: "AquaGuard Analytical Policy Simulator v2.4 (Render Cloud / Analytical Core)",
+      modelUsed: "AquaGuard Analytical Policy Simulator v2.4 (Analytical Core)",
       timestamp: new Date().toISOString(),
     };
   }
