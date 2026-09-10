@@ -10,11 +10,25 @@ import { useStudioStore } from "./lib/store/studio-store";
 
 export const App: React.FC = () => {
   const syncWithBackend = useStudioStore((state) => state.syncWithBackend);
+  const isServerSynced = useStudioStore((state) => state.isServerSynced);
 
   useEffect(() => {
     // Initial sync with backend upon app load
     syncWithBackend();
-  }, [syncWithBackend]);
+
+    // When server is starting up (e.g. Python initializing PyTorch/XGBoost on app boot),
+    // retry every 2.5 seconds until connected
+    let intervalId: any = null;
+    if (!isServerSynced) {
+      intervalId = setInterval(() => {
+        syncWithBackend();
+      }, 2500);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [syncWithBackend, isServerSynced]);
 
   return (
     <HashRouter>
