@@ -262,36 +262,49 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
     });
   }, [geoJsonData, selectedDistrictId, params, activeModelId, districts, policyImpactMode, policyReboundM, policyRecoveryMld, districtImpacts]);
 
+  // Ensure map tiles properly resize and fill container
+  useEffect(() => {
+    const handleResize = () => {
+      mapInstanceRef.current?.invalidateSize();
+    };
+    window.addEventListener("resize", handleResize);
+    const timer = setTimeout(handleResize, 350);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
-    <div className="relative h-full min-h-[440px] w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
+    <div className="relative h-full min-h-[380px] w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-xl">
       {/* Top Header Badge */}
-      <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-950/95 px-3 py-1.5 backdrop-blur-md shadow-lg pointer-events-none">
-        <Layers className="h-4 w-4 text-cyan-400" />
-        <span className="text-xs font-semibold text-slate-200">Delhi NCR District Boundaries</span>
-        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <div className="absolute top-2.5 left-2.5 z-[1000] flex items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-950/95 px-2.5 py-1 backdrop-blur-md shadow-lg pointer-events-none">
+        <Layers className="h-3.5 w-3.5 text-cyan-400" />
+        <span className="text-[11px] font-semibold text-slate-200">NCR Districts</span>
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
       </div>
 
-      {/* Map Legend Overlay - Highest Z-Index (over Leaflet map tiles and SVG panes) */}
-      <div className="absolute bottom-4 right-4 z-[1000] rounded-2xl border border-slate-700/90 bg-[#060c1d]/95 p-4 text-xs backdrop-blur-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] pointer-events-auto min-w-[200px]">
-        <div className="flex items-center gap-2 font-bold text-white mb-2.5 pb-2 border-b border-slate-800">
-          <Activity className="h-4 w-4 text-cyan-400" /> CGWB Extraction Stage
+      {/* Map Legend Overlay - Highest Z-Index */}
+      <div className="absolute bottom-2.5 right-2.5 z-[1000] rounded-xl border border-slate-700/90 bg-[#060c1d]/95 p-2.5 text-[11px] backdrop-blur-2xl shadow-xl pointer-events-auto min-w-[165px]">
+        <div className="flex items-center gap-1.5 font-bold text-white mb-1.5 pb-1 border-b border-slate-800 text-[10px]">
+          <Activity className="h-3 w-3 text-cyan-400" /> CGWB Extraction Stage
         </div>
-        <div className="space-y-2 font-medium">
-          <div className="flex items-center gap-2.5">
-            <span className="h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-emerald-950 shadow-sm"></span>
-            <span className="text-slate-100 text-[11px] font-semibold">Safe (&le; 70%)</span>
+        <div className="space-y-1 font-medium">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-950 shadow-sm shrink-0"></span>
+            <span className="text-slate-100 text-[10px] font-semibold">Safe (&le; 70%)</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="h-3 w-3 rounded-full bg-amber-400 ring-2 ring-amber-950 shadow-sm"></span>
-            <span className="text-slate-100 text-[11px] font-semibold">Semi-Critical (70–90%)</span>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-amber-950 shadow-sm shrink-0"></span>
+            <span className="text-slate-100 text-[10px] font-semibold">Semi-Critical (70–90%)</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="h-3 w-3 rounded-full bg-orange-500 ring-2 ring-orange-950 shadow-sm"></span>
-            <span className="text-slate-100 text-[11px] font-semibold">Critical (90–100%)</span>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-orange-950 shadow-sm shrink-0"></span>
+            <span className="text-slate-100 text-[10px] font-semibold">Critical (90–100%)</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-950 shadow-sm"></span>
-            <span className="text-slate-100 text-[11px] font-semibold">Over-Exploited (&gt; 100%)</span>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-red-950 shadow-sm shrink-0"></span>
+            <span className="text-slate-100 text-[10px] font-semibold">Over-Exploited (&gt; 100%)</span>
           </div>
         </div>
       </div>
