@@ -40,10 +40,10 @@ export const ForecastChart: React.FC = () => {
   >("depth");
 
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 sm:p-5 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/40 p-6 md:p-7 backdrop-blur-xl shadow-2xl flex flex-col justify-between">
       <div>
         {/* Header with Multi-Graph Tabs & Active Forecast Horizon Badge */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-cyan-400" />

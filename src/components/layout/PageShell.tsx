@@ -45,10 +45,10 @@ export const PageShell: React.FC<{ children: React.ReactNode }> = ({ children })
       <div className="fixed inset-0 bg-gradient-to-b from-[#020b1c]/40 via-[#030e22]/50 to-[#020817]/70 z-0 pointer-events-none backdrop-blur-[1px]" />
 
       <Navbar />
-      <main className="flex-1 w-full max-w-[1720px] mx-auto px-3 py-3 sm:px-6 sm:py-4 lg:px-8 z-10">
+      <main className="flex-1 w-full max-w-[1720px] mx-auto px-4 py-8 sm:px-8 lg:px-10 z-10">
         {children}
       </main>
-      <footer className="border-t border-slate-800/80 bg-[#061229]/90 py-3 text-center text-xs text-slate-400 z-10">
+      <footer className="border-t border-slate-800/80 bg-[#061229]/90 py-8 text-center text-sm text-slate-400 z-10">
         <p className="font-semibold tracking-wide">
           AquaSentinel • Central Ground Water Board (CGWB) & India-WRIS Hydrological Benchmark Platform
         </p>
