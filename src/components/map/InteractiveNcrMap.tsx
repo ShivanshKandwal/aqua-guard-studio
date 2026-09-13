@@ -35,6 +35,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
   // Default to bundled GeoJSON immediately so there's zero network delay or file:// protocol failure
   const [geoJsonData, setGeoJsonData] = useState<any>(ncrGeoJsonFallback);
   const [isLoading, setIsLoading] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   // Map district name in GeoJSON to our district ID
   const districtNameMapping: Record<string, string> = {
@@ -105,6 +106,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
       });
 
       mapInstanceRef.current = map;
+      setMapReady(true);
 
       // 100% Free OpenStreetMap Clean Base Layer (Zero Watermarks)
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -129,6 +131,7 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        setMapReady(false);
       }
     };
   }, [districts]);
@@ -259,8 +262,9 @@ export const InteractiveNcrMap: React.FC<InteractiveNcrMapProps> = ({
       }).addTo(mapInstanceRef.current);
 
       geoJsonLayerRef.current = geoJsonLayer;
+      mapInstanceRef.current?.invalidateSize();
     });
-  }, [geoJsonData, selectedDistrictId, params, activeModelId, districts, policyImpactMode, policyReboundM, policyRecoveryMld, districtImpacts]);
+  }, [geoJsonData, mapReady, selectedDistrictId, params, activeModelId, districts, policyImpactMode, policyReboundM, policyRecoveryMld, districtImpacts]);
 
   return (
     <div className="relative h-full min-h-[440px] w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
