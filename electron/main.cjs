@@ -49,7 +49,29 @@ function resolveServerScript() {
   return { script: devPath, cwd: path.join(__dirname, "..") };
 }
 
+function freePortIfBusy(port) {
+  if (process.platform === "win32") {
+    try {
+      const output = execSync(`netstat -ano | findstr :${port}`, { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] });
+      const lines = output.trim().split("\n");
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 5 && parts[1].includes(`:${port}`) && parts[3] === "LISTENING") {
+          const pid = parts[parts.length - 1].trim();
+          if (pid && pid !== "0" && pid !== String(process.pid)) {
+            console.log(`[AquaSentinel Electron] Releasing busy port ${port} from process PID ${pid}`);
+            execSync(`taskkill /pid ${pid} /f /t`, { stdio: "ignore" });
+          }
+        }
+      }
+    } catch (e) {
+      // Port is clear or netstat returned non-zero (which is expected if nothing listening)
+    }
+  }
+}
+
 function startPythonBackend() {
+  freePortIfBusy(8000);
   const { script: pythonScript, cwd: workingDir } = resolveServerScript();
   const pythonBinary = findPythonCommand();
 

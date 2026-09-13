@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently -k \"cross-env BROWSER=none vite\" \"python server/main.py\" \"wait-on tcp:5173 && electron .\"",
+    "dev": "cross-env VITE_CONFIG_NATIVE_IGNORE_WARNING=true vite",
+    "build": "cross-env VITE_CONFIG_NATIVE_IGNORE_WARNING=true vite build",
+    "preview": "cross-env VITE_CONFIG_NATIVE_IGNORE_WARNING=true vite preview",
+    "electron:dev": "concurrently -k \"cross-env BROWSER=none VITE_CONFIG_NATIVE_IGNORE_WARNING=true vite\" \"wait-on tcp:5173 && electron .\"",
     "electron:build": "vite build && electron-builder"
   },
   "dependencies": {
