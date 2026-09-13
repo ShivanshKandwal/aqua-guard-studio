@@ -16,43 +16,43 @@ export const StudioPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Banner / District Summary */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 rounded-3xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-[#0c1328]/90 p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-3xl border border-slate-700/80 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-[#0c1a3d]/95 p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5 rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-bold text-cyan-300 border border-cyan-500/30 shadow-sm">
-              <MapPin className="h-3.5 w-3.5" /> {district.name}, {district.state}
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2 rounded-xl bg-cyan-500/20 px-3.5 py-1.5 text-sm font-bold text-cyan-200 border border-cyan-400/40 shadow-sm">
+              <MapPin className="h-4 w-4 text-cyan-400" /> {district.name}, {district.state}
             </span>
-            <span className="rounded-full bg-slate-800/80 px-3 py-1 text-xs text-slate-300 border border-slate-700/60 font-medium">
+            <span className="rounded-xl bg-slate-800/90 px-3.5 py-1.5 text-sm text-slate-200 border border-slate-700/80 font-semibold">
               Aquifer: {district.aquiferType}
             </span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white mt-2.5">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mt-3 drop-shadow-sm">
             Groundwater Stress Studio & Simulation Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-3xl mt-1.5 leading-relaxed">
+          <p className="text-sm md:text-base text-slate-300 max-w-4xl mt-2 leading-relaxed font-normal">
             Manipulate meteorological deviations, groundwater draft rates, and artificial recharge variables to simulate sub-surface aquifer depths and trigger statutory CGWB governance policies in real-time.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 relative z-10 shrink-0">
+        <div className="flex items-center gap-3 relative z-10 shrink-0 flex-wrap">
           <Link
             to="/policies"
-            className="flex items-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 px-4 py-2.5 text-xs sm:text-sm font-bold text-cyan-200 transition-all shadow-lg shadow-cyan-500/10"
+            className="flex items-center gap-2 rounded-2xl border border-cyan-400/50 bg-cyan-500/20 hover:bg-cyan-500/30 px-5 py-3 text-sm font-bold text-cyan-100 transition-all duration-200 shadow-lg shadow-cyan-500/20 hover:scale-102"
           >
-            <ShieldAlert className="h-4 w-4 text-cyan-400" /> Active Policies ({policy.directives.length})
+            <ShieldAlert className="h-4 w-4 text-cyan-300" /> Active Policies ({policy.directives.length})
           </Link>
           <Link
             to="/assistant"
-            className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-200 transition-all shadow-md"
+            className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700/90 px-5 py-3 text-sm font-bold text-slate-100 transition-all duration-200 shadow-md hover:scale-102"
           >
             <Sparkles className="h-4 w-4 text-cyan-400" /> Ask AI Advisor
           </Link>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards with Enlarged Typography */}
       <QuickStatsBar />
 
       {/* Main Interactive Grid: Map + Sliders */}
@@ -63,7 +63,7 @@ export const StudioPage: React.FC = () => {
         </div>
 
         {/* Right / Interactive Map */}
-        <div className="lg:col-span-8 flex flex-col min-h-[520px]">
+        <div className="lg:col-span-8 flex flex-col min-h-[540px]">
           <InteractiveNcrMap />
         </div>
       </div>

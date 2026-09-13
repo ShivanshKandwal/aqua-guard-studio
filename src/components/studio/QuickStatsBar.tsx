@@ -13,96 +13,96 @@ export const QuickStatsBar: React.FC = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {/* 1. Water Table Depth */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl shadow-xl hover:border-cyan-500/30 transition-all duration-200 group">
-        <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+      <div className="rounded-3xl border border-slate-700/80 bg-slate-900/60 p-6 backdrop-blur-xl shadow-2xl hover:border-cyan-400/50 hover:shadow-cyan-500/10 transition-all duration-300 group">
+        <div className="flex items-center justify-between text-slate-300 text-sm font-semibold">
           <span>Projected Water Table Depth</span>
-          <div className="h-8 w-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition-colors">
-            <Droplets className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-2xl bg-cyan-500/15 flex items-center justify-center text-cyan-400 group-hover:scale-110 group-hover:bg-cyan-500/25 transition-all">
+            <Droplets className="h-5 w-5" />
           </div>
         </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-3xl font-bold tracking-tight text-white">
+        <div className="mt-4 flex items-baseline gap-2.5">
+          <span className="font-mono text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
             {prediction.predictedWaterLevelM}
           </span>
-          <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">mbgl</span>
+          <span className="text-sm text-slate-400 font-bold uppercase tracking-wider">mbgl</span>
         </div>
-        <div className="mt-2 flex items-center gap-1.5 text-xs">
+        <div className="mt-3 flex items-center gap-1.5 text-sm">
           {prediction.waterLevelDeltaM > 0 ? (
-            <span className="flex items-center text-red-400 font-semibold">
-              <TrendingDown className="h-3.5 w-3.5 mr-1" /> +{prediction.waterLevelDeltaM}m drop vs baseline
+            <span className="flex items-center text-red-400 font-bold">
+              <TrendingDown className="h-4 w-4 mr-1" /> +{prediction.waterLevelDeltaM}m drop vs baseline
             </span>
           ) : prediction.waterLevelDeltaM < 0 ? (
-            <span className="flex items-center text-emerald-400 font-semibold">
-              <TrendingUp className="h-3.5 w-3.5 mr-1" /> {prediction.waterLevelDeltaM}m rebound vs baseline
+            <span className="flex items-center text-emerald-400 font-bold">
+              <TrendingUp className="h-4 w-4 mr-1" /> {prediction.waterLevelDeltaM}m rebound vs baseline
             </span>
           ) : (
-            <span className="text-slate-400 font-medium">Stable at {district.baselineWaterLevelM} mbgl baseline</span>
+            <span className="text-slate-300 font-medium">Stable at {district.baselineWaterLevelM} mbgl baseline</span>
           )}
         </div>
       </div>
 
       {/* 2. Extraction Stage */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl shadow-xl hover:border-slate-700 transition-all duration-200 group">
-        <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+      <div className="rounded-3xl border border-slate-700/80 bg-slate-900/60 p-6 backdrop-blur-xl shadow-2xl hover:border-slate-600 transition-all duration-300 group">
+        <div className="flex items-center justify-between text-slate-300 text-sm font-semibold">
           <span>Stage of Groundwater Extraction</span>
-          <div className="h-8 w-8 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: `${riskColor}18` }}>
-            <AlertCircle className="h-4 w-4" style={{ color: riskColor }} />
+          <div className="h-9 w-9 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all" style={{ backgroundColor: `${riskColor}22` }}>
+            <AlertCircle className="h-5 w-5" style={{ color: riskColor }} />
           </div>
         </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-3xl font-bold tracking-tight" style={{ color: riskColor }}>
+        <div className="mt-4 flex items-baseline gap-2.5">
+          <span className="font-mono text-4xl font-extrabold tracking-tight" style={{ color: riskColor }}>
             {prediction.predictedExtractionPct}%
           </span>
         </div>
-        <div className="mt-2">
+        <div className="mt-3">
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-extrabold uppercase tracking-wider shadow-sm"
             style={{
-              backgroundColor: `${riskColor}18`,
+              backgroundColor: `${riskColor}22`,
               color: riskColor,
-              border: `1px solid ${riskColor}38`,
+              border: `1px solid ${riskColor}50`,
             }}
           >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: riskColor }} />
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: riskColor }} />
             {prediction.riskLevel}
           </span>
         </div>
       </div>
 
       {/* 3. Potential Daily Water Recovery */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl shadow-xl hover:border-emerald-500/30 transition-all duration-200 group">
-        <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+      <div className="rounded-3xl border border-slate-700/80 bg-slate-900/60 p-6 backdrop-blur-xl shadow-2xl hover:border-emerald-400/50 hover:shadow-emerald-500/10 transition-all duration-300 group">
+        <div className="flex items-center justify-between text-slate-300 text-sm font-semibold">
           <span>Potential Net Daily Recovery</span>
-          <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:bg-emerald-500/25 transition-all">
+            <ShieldCheck className="h-5 w-5" />
           </div>
         </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-3xl font-bold tracking-tight text-emerald-400">
-            {policy.totalWaterSavingsMld}
+        <div className="mt-4 flex items-baseline gap-2.5">
+          <span className="font-mono text-4xl font-extrabold tracking-tight text-emerald-400 drop-shadow-sm">
+            {policy.projectedRecoveryMld}
           </span>
-          <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">MLD / day</span>
+          <span className="text-sm text-slate-400 font-bold uppercase tracking-wider">MLD / DAY</span>
         </div>
-        <p className="mt-2 text-xs text-slate-400 font-medium">
-          Across <span className="text-slate-200 font-semibold">{policy.directives.length}</span> active policy mandates
+        <p className="mt-3 text-sm text-slate-300 font-medium">
+          Across <span className="text-emerald-300 font-bold">{policy.directives.length} active policy mandates</span>
         </p>
       </div>
 
-      {/* 4. Required Capex */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 backdrop-blur-xl shadow-xl hover:border-purple-500/30 transition-all duration-200 group">
-        <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+      {/* 4. Infrastructure CAPEX Required */}
+      <div className="rounded-3xl border border-slate-700/80 bg-slate-900/60 p-6 backdrop-blur-xl shadow-2xl hover:border-purple-400/50 hover:shadow-purple-500/10 transition-all duration-300 group">
+        <div className="flex items-center justify-between text-slate-300 text-sm font-semibold">
           <span>Est. Infrastructure CAPEX</span>
-          <div className="h-8 w-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-            <Banknote className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-2xl bg-purple-500/15 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:bg-purple-500/25 transition-all">
+            <Banknote className="h-5 w-5" />
           </div>
         </div>
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-3xl font-bold tracking-tight text-purple-300">
-            ₹{policy.totalCapexCrores}
+        <div className="mt-4 flex items-baseline gap-2.5">
+          <span className="font-mono text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            ₹{policy.estimatedCapexCrores}
           </span>
-          <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Crores</span>
+          <span className="text-sm text-slate-400 font-bold uppercase tracking-wider">CRORES</span>
         </div>
-        <p className="mt-2 text-xs text-slate-400 font-medium">
+        <p className="mt-3 text-sm text-slate-300 font-medium truncate">
           Recharge Pits & Dual STP Reticulation
         </p>
       </div>

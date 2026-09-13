@@ -29,10 +29,6 @@ export const Navbar: React.FC = () => {
     setUserRole,
   } = useStudioStore();
 
-  // Define master nav links with minimum allowed role
-  // 1-user: Studio & Map, AI Advisor, Policies & Directives (3 pages)
-  // 2-policy_maker: adds Policy Evaluator (4 pages)
-  // 3-developer: adds Model Benchmarks (5 pages)
   const masterNavLinks = [
     { path: "/", label: "Studio & Map", icon: Compass, minRole: "user" },
     { path: "/assistant", label: "AI Advisor", icon: Bot, minRole: "user" },
@@ -52,7 +48,6 @@ export const Navbar: React.FC = () => {
 
   const handleRoleChange = (newRole: UserRole) => {
     setUserRole(newRole);
-    // If current path becomes inaccessible under the new role, gracefully redirect to "/"
     if (newRole === "user" && (location.pathname === "/policy-evaluator" || location.pathname === "/models")) {
       navigate("/");
     } else if (newRole === "policy_maker" && location.pathname === "/models") {
@@ -60,37 +55,37 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const roleOptions: { role: UserRole; label: string; shortLabel: string; icon: any }[] = [
-    { role: "user", label: "Normal User", shortLabel: "User", icon: User },
-    { role: "policy_maker", label: "Policy Maker", shortLabel: "Policy", icon: Building2 },
-    { role: "developer", label: "Developer", shortLabel: "Dev", icon: Terminal },
+  const roleOptions: { role: UserRole; label: string; icon: any }[] = [
+    { role: "user", label: "Normal User", icon: User },
+    { role: "policy_maker", label: "Policy Maker", icon: Building2 },
+    { role: "developer", label: "Developer", icon: Terminal },
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#060913]/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1720px] items-center justify-between px-3 py-2.5 sm:px-6 lg:px-8 gap-3">
-        {/* Brand Rebranded to AquaSentinel */}
-        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-md shadow-cyan-500/25 group-hover:scale-105 transition-transform duration-200">
-            <Droplets className="h-4 w-4" />
+    <header className="sticky top-0 z-50 border-b border-slate-700/80 bg-[#061229]/95 backdrop-blur-2xl shadow-xl">
+      <div className="mx-auto flex max-w-[1760px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8 gap-3 flex-wrap xl:flex-nowrap">
+        {/* Brand Logo & Title */}
+        <Link to="/" className="flex items-center gap-3 group shrink-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/30 group-hover:scale-105 group-hover:shadow-cyan-400/40 transition-all duration-300">
+            <Droplets className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-base tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors">
                 AquaSentinel
               </span>
-              <span className="rounded-full bg-cyan-950/80 px-1.5 py-0.2 text-[9px] font-bold text-cyan-400 border border-cyan-800/70 shadow-sm">
+              <span className="rounded-full bg-cyan-950 px-2 py-0.5 text-[11px] font-extrabold text-cyan-300 border border-cyan-700 shadow-sm">
                 2.0
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium hidden sm:block">
+            <p className="text-xs text-slate-300 font-medium hidden sm:block">
               CGWB Groundwater Intelligence & Governance
             </p>
           </div>
         </Link>
 
-        {/* Center Nav Links (Filtered dynamically by persona) */}
-        <nav className="hidden md:flex items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 shrink-0">
+        {/* Center Nav Links */}
+        <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-slate-700/80 bg-slate-900/80 p-1.5 shrink-0 shadow-inner">
           {visibleNavLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
@@ -98,23 +93,23 @@ export const Navbar: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-medium transition-all ${
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                    ? "bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-cyan-200 border border-cyan-400/40 shadow-md"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className={`h-4 w-4 ${isActive ? "text-cyan-400" : "text-slate-400"}`} />
                 <span className="whitespace-nowrap">{link.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Right Controls: Role Toggle, District Selector, Model Switcher & Telemetry */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          {/* USER MODE TOGGLE (Segmented Pill) */}
-          <div className="flex items-center rounded-xl border border-slate-800 bg-slate-950/80 p-0.5 shadow-inner">
+        {/* Right Action Bar: Compact, clean, zero-clipping */}
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          {/* USER PERSONA SWITCHER */}
+          <div className="flex items-center rounded-2xl border border-slate-700/80 bg-slate-950/90 p-1 shadow-inner">
             {roleOptions.map((opt) => {
               const Icon = opt.icon;
               const isSelected = userRole === opt.role;
@@ -122,28 +117,28 @@ export const Navbar: React.FC = () => {
                 <button
                   key={opt.role}
                   onClick={() => handleRoleChange(opt.role)}
-                  className={`flex items-center gap-1.5 rounded-lg px-2 sm:px-2.5 py-1 text-xs font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? "bg-gradient-to-r from-cyan-500/25 to-blue-600/25 text-cyan-300 border border-cyan-500/40 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
+                      ? "bg-gradient-to-r from-cyan-500/30 to-blue-600/30 text-cyan-200 border border-cyan-400/50 shadow-md"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                   }`}
                   title={`Switch to ${opt.label} Mode`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isSelected ? "text-cyan-400" : "text-slate-500"}`} />
+                  <Icon className={`h-4 w-4 ${isSelected ? "text-cyan-400" : "text-slate-500"}`} />
                   <span className="hidden xl:inline">{opt.label}</span>
-                  <span className="inline xl:hidden text-[11px]">{opt.shortLabel}</span>
+                  <span className="inline xl:hidden">{opt.label.split(" ")[0]}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* District Picker */}
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5">
-            <span className="text-[10px] text-slate-500 font-medium hidden lg:inline">District:</span>
+          {/* District Picker Dropdown */}
+          <div className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 shadow-sm">
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider hidden lg:inline">District:</span>
             <select
               value={selectedDistrictId}
               onChange={(e) => setSelectedDistrictId(e.target.value)}
-              className="bg-transparent text-xs font-medium text-slate-200 outline-none cursor-pointer max-w-[120px] sm:max-w-[150px] truncate"
+              className="bg-transparent text-sm font-semibold text-slate-100 outline-none cursor-pointer max-w-[150px] sm:max-w-[180px] truncate"
             >
               {districts.map((d) => (
                 <option key={d.id} value={d.id} className="bg-slate-900 text-slate-100">
@@ -153,14 +148,14 @@ export const Navbar: React.FC = () => {
             </select>
           </div>
 
-          {/* Model Switcher (Visible to Developers & Policy Makers) */}
+          {/* Model Switcher (Visible in Dev & Policy Modes) */}
           {userRole !== "user" && (
-            <div className="hidden lg:flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1.5">
-              <Sparkles className="h-3 w-3 text-cyan-400" />
+            <div className="hidden 2xl:flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 shadow-sm">
+              <Sparkles className="h-4 w-4 text-cyan-400" />
               <select
                 value={activeModelId}
                 onChange={(e) => setActiveModelId(e.target.value)}
-                className="bg-transparent text-xs font-medium text-cyan-300 outline-none cursor-pointer"
+                className="bg-transparent text-sm font-semibold text-cyan-300 outline-none cursor-pointer"
               >
                 <option value="xgboost-v1" className="bg-slate-900 text-slate-100">XGBoost Ensemble</option>
                 <option value="lstm-v1" className="bg-slate-900 text-slate-100">LSTM Recurrent Net</option>
@@ -169,24 +164,25 @@ export const Navbar: React.FC = () => {
             </div>
           )}
 
-          {/* Live Server Indicator */}
+          {/* Live Server Indicator Pill */}
           <div
-            className={`hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-mono border ${
+            className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-mono font-bold border transition-colors shadow-sm ${
               isServerSynced
-                ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-400"
-                : "bg-amber-950/40 border-amber-800/60 text-amber-300"
+                ? "bg-emerald-950/60 border-emerald-700/80 text-emerald-300"
+                : "bg-amber-950/60 border-amber-700/80 text-amber-300"
             }`}
           >
             <span
-              className={`h-2 w-2 rounded-full ${isServerSynced ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}
+              className={`h-2.5 w-2.5 rounded-full ${isServerSynced ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`}
             />
-            <span>{isServerSynced ? activeServerLabel : "Backend: Offline"}</span>
+            <span className="hidden sm:inline">{isServerSynced ? activeServerLabel : "Backend Offline"}</span>
+            <span className="inline sm:hidden">{isServerSynced ? "Live" : "Offline"}</span>
           </div>
         </div>
       </div>
 
-      {/* Mobile Secondary Sub-navigation Bar */}
-      <div className="md:hidden flex items-center justify-around border-t border-slate-800/60 bg-slate-950/90 px-2 py-1.5 overflow-x-auto gap-1">
+      {/* Mobile Sub-Navigation Bar */}
+      <div className="md:hidden flex items-center justify-start border-t border-slate-800 bg-slate-950/95 px-3 py-2 overflow-x-auto gap-2">
         {visibleNavLinks.map((link) => {
           const Icon = link.icon;
           const isActive = location.pathname === link.path;
@@ -194,13 +190,13 @@ export const Navbar: React.FC = () => {
             <Link
               key={link.path}
               to={link.path}
-              className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-cyan-500/25 text-cyan-300 border border-cyan-500/40"
+                  : "text-slate-300 hover:text-white"
               }`}
             >
-              <Icon className="h-3 w-3" />
+              <Icon className="h-3.5 w-3.5" />
               <span>{link.label}</span>
             </Link>
           );
