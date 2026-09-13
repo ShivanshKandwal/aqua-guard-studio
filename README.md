@@ -1,4 +1,4 @@
-﻿# AquaGuard Studio 2.0 🌊
+# AquaSentinel 2.0 🌊
 
 **Groundwater Stress Intelligence, 3D Geospatial Simulation & Dynamic Policy Governance Platform for Delhi NCR**
 

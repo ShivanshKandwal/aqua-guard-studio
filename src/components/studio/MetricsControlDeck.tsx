@@ -1,6 +1,17 @@
 import React from "react";
-import { useStudioStore } from "../../lib/store/studio-store";
-import { Sliders, RefreshCw, CloudRain, Droplet, Building2, Factory, Sprout, Calendar, Sparkles } from "lucide-react";
+import { useStudioStore, getModelForHorizon } from "../../lib/store/studio-store";
+import {
+  Sliders,
+  RefreshCw,
+  CloudRain,
+  Droplet,
+  Building2,
+  Factory,
+  Sprout,
+  Calendar,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 
 export const MetricsControlDeck: React.FC = () => {
   const {
@@ -10,6 +21,8 @@ export const MetricsControlDeck: React.FC = () => {
     applyPreset,
     activeModelId,
     setActiveModelId,
+    autoModelSwitchEnabled,
+    setAutoModelSwitchEnabled,
     isServerSynced,
     isEvaluating,
     activeServerLabel,
@@ -21,19 +34,22 @@ export const MetricsControlDeck: React.FC = () => {
     if (years <= 4) {
       return {
         modelId: "linreg-v1",
-        label: "Linear Regression Recommended (Fast near-term slope baseline)",
+        name: "Linear Regression",
+        label: "Linear Regression (Fast near-term slope baseline for <= 4 yrs)",
         color: "text-amber-400 border-amber-800/60 bg-amber-950/30",
       };
-    } else if (years <= 8) {
+    } else if (years <= 9) {
       return {
         modelId: "xgboost-v1",
-        label: "XGBoost Recommended (Optimal non-linear threshold & extreme shocks)",
+        name: "XGBoost Ensemble",
+        label: "XGBoost Ensemble (Optimal for non-linear thresholds & shocks for 5–9 yrs)",
         color: "text-cyan-400 border-cyan-800/60 bg-cyan-950/30",
       };
     } else {
       return {
         modelId: "lstm-v1",
-        label: "LSTM Neural Net Recommended (Superior multi-season hydrological lag & hysteresis)",
+        name: "LSTM Recurrent Net",
+        label: "LSTM Recurrent Net (Multi-season hydrological lag & hysteresis for 10+ yrs)",
         color: "text-purple-400 border-purple-800/60 bg-purple-950/30",
       };
     }
@@ -61,15 +77,37 @@ export const MetricsControlDeck: React.FC = () => {
           </button>
         </div>
 
-        {/* SPECIAL FORECAST HORIZON SLIDER (3 to 15 Years) */}
+        {/* SPECIAL FORECAST HORIZON SLIDER (3 to 15 Years) WITH AUTO-MODEL SWITCH */}
         <div className="mt-5 rounded-2xl border border-cyan-500/30 bg-cyan-950/25 p-4 shadow-inner">
           <div className="flex justify-between items-center text-xs mb-1.5">
             <span className="flex items-center gap-1.5 font-bold text-cyan-200">
               <Calendar className="h-4 w-4 text-cyan-400" /> Forecast Horizon
             </span>
-            <span className="rounded-md bg-cyan-900/70 border border-cyan-500/40 px-2.5 py-0.5 font-mono font-bold text-cyan-300 shadow-sm">
-              {params.targetYearHorizon} Years (2025–{2025 + params.targetYearHorizon})
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Auto Switch Mode Toggle */}
+              <button
+                onClick={() => {
+                  const next = !autoModelSwitchEnabled;
+                  setAutoModelSwitchEnabled(next);
+                  if (next) {
+                    setActiveModelId(getModelForHorizon(params.targetYearHorizon));
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                  autoModelSwitchEnabled
+                    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm"
+                    : "bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200"
+                }`}
+                title="Toggle automatic model selection based on horizon length"
+              >
+                <Zap className={`h-2.5 w-2.5 ${autoModelSwitchEnabled ? "text-cyan-400 fill-cyan-400" : ""}`} />
+                {autoModelSwitchEnabled ? "Auto-Model: ON" : "Auto-Model: OFF"}
+              </button>
+
+              <span className="rounded-md bg-cyan-900/70 border border-cyan-500/40 px-2.5 py-0.5 font-mono font-bold text-cyan-300 shadow-sm">
+                {params.targetYearHorizon} Yrs (2025–{2025 + params.targetYearHorizon})
+              </span>
+            </div>
           </div>
 
           <input
@@ -83,23 +121,32 @@ export const MetricsControlDeck: React.FC = () => {
           />
 
           <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-            <span>3 Yrs (Near)</span>
-            <span>8 Yrs (Mid)</span>
-            <span>15 Yrs (Long-term)</span>
+            <span>3 Yrs (Near-term)</span>
+            <span>8 Yrs (Mid-range)</span>
+            <span>15 Yrs (Decadal Lag)</span>
           </div>
 
-          {/* Dynamic Model Recommendation Chip */}
+          {/* Dynamic Model Recommendation / Active Auto Badge */}
           <div className={`mt-2.5 flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] ${advice.color}`}>
-            <span className="flex items-center gap-1.5 font-medium">
+            <span className="flex items-center gap-1.5 font-medium leading-tight">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              {advice.label}
+              <span>
+                {autoModelSwitchEnabled ? (
+                  <>
+                    <strong className="text-white font-semibold">Auto-Assigned:</strong> {advice.name} ({params.targetYearHorizon}y horizon)
+                  </>
+                ) : (
+                  advice.label
+                )}
+              </span>
             </span>
+
             {activeModelId !== advice.modelId && (
               <button
                 onClick={() => setActiveModelId(advice.modelId)}
                 className="shrink-0 rounded bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-400/40 px-1.5 py-0.5 text-[10px] font-bold text-white transition"
               >
-                Switch Model
+                Apply Model
               </button>
             )}
           </div>

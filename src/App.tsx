@@ -6,11 +6,24 @@ import { AssistantPage } from "./pages/AssistantPage";
 import { PoliciesPage } from "./pages/PoliciesPage";
 import { PolicyEvaluatorPage } from "./pages/PolicyEvaluatorPage";
 import { ModelsPage } from "./pages/ModelsPage";
-import { useStudioStore } from "./lib/store/studio-store";
+import { useStudioStore, type UserRole } from "./lib/store/studio-store";
+
+// Route Guard Component
+const ProtectedRoute: React.FC<{
+  allowedRoles: UserRole[];
+  currentRole: UserRole;
+  children: React.ReactNode;
+}> = ({ allowedRoles, currentRole, children }) => {
+  if (!allowedRoles.includes(currentRole)) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
 
 export const App: React.FC = () => {
   const syncWithBackend = useStudioStore((state) => state.syncWithBackend);
   const isServerSynced = useStudioStore((state) => state.isServerSynced);
+  const userRole = useStudioStore((state) => state.userRole);
 
   useEffect(() => {
     // Initial sync with backend upon app load
@@ -34,11 +47,31 @@ export const App: React.FC = () => {
     <HashRouter>
       <PageShell>
         <Routes>
+          {/* Universal Pages (1-Normal User, 2-Policy Maker, 3-Developer) */}
           <Route path="/" element={<StudioPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
-          <Route path="/policy-evaluator" element={<PolicyEvaluatorPage />} />
           <Route path="/policies" element={<PoliciesPage />} />
-          <Route path="/models" element={<ModelsPage />} />
+
+          {/* Policy Evaluator (Accessible to Policy Makers & Developers) */}
+          <Route
+            path="/policy-evaluator"
+            element={
+              <ProtectedRoute allowedRoles={["policy_maker", "developer"]} currentRole={userRole}>
+                <PolicyEvaluatorPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Model Benchmarks Lab (Accessible to Developers) */}
+          <Route
+            path="/models"
+            element={
+              <ProtectedRoute allowedRoles={["developer"]} currentRole={userRole}>
+                <ModelsPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </PageShell>

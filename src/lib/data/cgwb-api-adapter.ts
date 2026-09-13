@@ -143,7 +143,7 @@ class CGWBApiAdapter {
 
     for (const baseUrl of endpoints) {
       try {
-        console.log(`[AquaGuard] Fetching prediction from: ${baseUrl}/api/predict`);
+        console.log(`[AquaSentinel] Fetching prediction from: ${baseUrl}/api/predict`);
         const timeout = baseUrl.includes("127.0.0.1") ? 5000 : 25000;
         const response = await this.fetchWithTimeout(
           `${baseUrl}/api/predict`,
@@ -226,7 +226,7 @@ class CGWBApiAdapter {
           },
         };
       } catch (err) {
-        console.warn(`[AquaGuard] Request to ${baseUrl} failed:`, err);
+        console.warn(`[AquaSentinel] Request to ${baseUrl} failed:`, err);
       }
     }
     return null;
@@ -275,7 +275,7 @@ class CGWBApiAdapter {
           return await response.json();
         }
       } catch (err) {
-        console.warn(`[AquaGuard Assistant] Request to ${baseUrl} failed:`, err);
+        console.warn(`[AquaSentinel Assistant] Request to ${baseUrl} failed:`, err);
       }
     }
     return null;
@@ -312,7 +312,7 @@ class CGWBApiAdapter {
           return await response.json();
         }
       } catch (err) {
-        console.warn(`[AquaGuard Policy] Request to ${baseUrl} failed:`, err);
+        console.warn(`[AquaSentinel Policy] Request to ${baseUrl} failed:`, err);
       }
     }
 
@@ -430,7 +430,7 @@ class CGWBApiAdapter {
       financials,
       districtImpacts,
       aiPassage: `Policy intervention '${policyTitle}' projected to remediate ${recoveryMld.toFixed(1)} MLD across ${targetDistrict.name}. Aquifer levels are estimated to rebound by ${trajectory[trajectory.length - 1].reboundM}m over a 10-year horizon, easing stress from ${targetDistrict.stageOfExtractionPct}% to ${districtImpacts[targetDistrict.id].simulatedExtractionPct}%.`,
-      modelUsed: "AquaGuard Analytical Policy Simulator v2.4 (Analytical Core)",
+      modelUsed: "AquaSentinel Analytical Policy Simulator v2.4 (Analytical Core)",
       timestamp: new Date().toISOString(),
     };
   }

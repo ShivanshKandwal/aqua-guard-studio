@@ -50,7 +50,7 @@ export const PageShell: React.FC<{ children: React.ReactNode }> = ({ children })
       </main>
       <footer className="border-t border-slate-800/60 bg-[#060913]/90 py-8 text-center text-xs text-slate-500 z-10">
         <p className="font-medium tracking-wide">
-          AquaGuard Studio 2.0 • Central Ground Water Board (CGWB) & India-WRIS Hydrological Benchmark Platform
+          AquaSentinel • Central Ground Water Board (CGWB) & India-WRIS Hydrological Benchmark Platform
         </p>
       </footer>
     </div>

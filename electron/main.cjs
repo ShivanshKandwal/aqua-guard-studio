@@ -53,7 +53,7 @@ function startPythonBackend() {
   const { script: pythonScript, cwd: workingDir } = resolveServerScript();
   const pythonBinary = findPythonCommand();
 
-  console.log(`[AquaGuard Electron] Launching Python backend: "${pythonBinary}" "${pythonScript}" in "${workingDir}"`);
+  console.log(`[AquaSentinel Electron] Launching Python backend: "${pythonBinary}" "${pythonScript}" in "${workingDir}"`);
   try {
     pythonProcess = spawn(pythonBinary, [pythonScript], {
       cwd: workingDir,
@@ -74,21 +74,21 @@ function startPythonBackend() {
     }
 
     pythonProcess.on("close", (code) => {
-      console.log(`[AquaGuard Electron] Python backend process exited with code ${code}`);
+      console.log(`[AquaSentinel Electron] Python backend process exited with code ${code}`);
       pythonProcess = null;
     });
 
     pythonProcess.on("error", (err) => {
-      console.error("[AquaGuard Electron] Failed to spawn Python backend:", err);
+      console.error("[AquaSentinel Electron] Failed to spawn Python backend:", err);
     });
   } catch (err) {
-    console.error("[AquaGuard Electron] Exception spawning Python backend:", err);
+    console.error("[AquaSentinel Electron] Exception spawning Python backend:", err);
   }
 }
 
 function stopPythonBackend() {
   if (pythonProcess && pythonProcess.pid) {
-    console.log("[AquaGuard Electron] Shutting down Python backend process PID:", pythonProcess.pid);
+    console.log("[AquaSentinel Electron] Shutting down Python backend process PID:", pythonProcess.pid);
     try {
       if (process.platform === "win32") {
         execSync(`taskkill /pid ${pythonProcess.pid} /f /t`, { stdio: "ignore" });
@@ -96,7 +96,7 @@ function stopPythonBackend() {
         pythonProcess.kill("SIGTERM");
       }
     } catch (e) {
-      console.error("[AquaGuard Electron] Error terminating Python process:", e);
+      console.error("[AquaSentinel Electron] Error terminating Python process:", e);
     }
     pythonProcess = null;
   }
@@ -108,7 +108,7 @@ function createWindow() {
     height: 920,
     minWidth: 1080,
     minHeight: 720,
-    title: "AquaGuard Studio - Hydrogeological Intelligence Platform",
+    title: "AquaSentinel - Hydrogeological Intelligence Platform",
     backgroundColor: "#030712",
     autoHideMenuBar: true,
     show: false,

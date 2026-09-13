@@ -29,7 +29,7 @@ class GroundwaterLSTM(nn.Module):
         out, _ = self.lstm(x)
         return self.fc(out[:, -1, :]).squeeze(-1)
 
-app = FastAPI(title="AquaGuard ML Inference Server", version="2.0.0")
+app = FastAPI(title="AquaSentinel ML Inference Server", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,7 +80,7 @@ class SimulationPayload(BaseModel):
 def health_check():
     return {
         "status": "ONLINE",
-        "service": "AquaGuard ML Engine",
+        "service": "AquaSentinel ML Engine",
         "active_models": ["linreg-v1", "xgboost-v1", "lstm-v1"],
         "dataset": "CGWB Delhi NCR (2015-2024)"
     }
@@ -449,7 +449,7 @@ def chat_assistant(payload: AssistantChatPayload):
     if groq_client:
         try:
             system_prompt = f"""You are the Chief Groundwater Scientist & Hydrogeology Policy Advisor at the Central Ground Water Board (CGWB), Ministry of Jal Shakti, Government of India.
-You provide technically rigorous, data-driven, and statutory-compliant answers for the Delhi NCR aquifer simulation platform (AquaGuard Studio).
+You provide technically rigorous, data-driven, and statutory-compliant answers for the Delhi NCR aquifer simulation platform (AquaSentinel).
 
 LIVE HYDROGEOLOGICAL TELEMETRY & SIMULATION CONTEXT FOR {d_name.upper()}:
 - State: {d_info['state']}
@@ -572,7 +572,7 @@ RESPONSE GUIDELINES:
         ]
 
     else:
-        reply_text = f"### 💡 AquaGuard Hydro-Intelligence for **{d_name}**\n\n" \
+        reply_text = f"### 💡 AquaSentinel Hydro-Intelligence for **{d_name}**\n\n" \
                      f"I have evaluated your query against official **CGWB assessment baselines** and live ML simulation metrics for **{d_name}**:\n\n" \
                      f"- **Current Extraction Stress:** {curr_extract:.1f}% ({curr_risk})\n" \
                      f"- **Projected Water Table:** {curr_depth:.2f} mbgl\n" \

@@ -1,5 +1,5 @@
 {
-  "name": "aqua-guard-studio",
+  "name": "aqua-sentinel",
   "version": "1.0.0",
   "main": "electron/main.cjs",
   "scripts": {
@@ -48,8 +48,8 @@
     "wait-on": "^9.1.0"
   },
   "build": {
-    "appId": "com.aquaguard.studio",
-    "productName": "AquaGuard Studio",
+    "appId": "com.aquasentinel.studio",
+    "productName": "AquaSentinel",
     "directories": {
       "output": "release"
     },
